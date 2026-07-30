@@ -1,36 +1,49 @@
-# Traditional Chinese Bridge (Minecraft 1.20.1)
+# 繁體中文橋接模組（Traditional Chinese Bridge）
 
-Client-side mod that creates and enables `resourcepacks/TChineseB-1.20.1.zip` when Minecraft starts.
-It scans installed mod jars, zip/folder resource packs, and translates every discovered
-`assets/<namespace>/lang/zh_cn.json` to `zh_tw.json` with OpenCC — except namespaces that
-already supply their own `zh_tw.json`.
+這是一個用戶端模組，可以把其他模組或資源包提供的簡體中文翻譯，自動轉換成繁體中文。
 
-Simplified Chinese files from all eligible installed mods and resource-pack zip/folders are
-merged into that single generated zip. Sources that already contain their own `zh_tw.json`
-are left alone. The generated pack is then added to Minecraft's selected resource packs and resources are
-reloaded. It is safe to regenerate: existing output files are overwritten, while originals
-are never modified.
+如果你使用「中文（台灣）」語言，但某個模組只有 `zh_cn` 簡體中文，本模組會在遊戲啟動時：
 
-## Install
+1. 掃描已安裝的模組與資源包。
+2. 找出只有簡體中文、沒有繁體中文的翻譯。
+3. 將簡體中文轉換成繁體中文。
+4. 合併成一個 `TChineseB-遊戲版本.zip` 資源包。
+5. 自動啟用該資源包。
 
-1. Install Fabric Loader `0.15.11` (or newer) and Fabric API for Minecraft 1.20.1.
-2. Put the jar for your loader in `.minecraft/mods`.
-3. Start the game. The generated pack appears as **TChineseB-1.20.1.zip**.
+原始模組與資源包不會被修改。
 
-## Build
+## 安裝方式
 
-Requires JDK 17:
+1. 在 Releases 頁面找到你的 Minecraft 版本。
+2. 依照使用的載入器下載對應檔案：
+   - `fabric`：Fabric
+   - `forge`：Forge
+   - `neoforge`：NeoForge
+3. 將下載的 `.jar` 放進 Minecraft 的 `mods` 資料夾。
+4. 啟動遊戲並選擇「中文（台灣）」。
 
-```sh
-JAVA_HOME=/opt/homebrew/opt/openjdk@17 ./gradlew build
-```
+第一次啟動後，遊戲的 `resourcepacks` 資料夾會出現自動產生的繁體中文資源包。
 
-The distributable jar is under `build/libs/`.
+## 檔名說明
 
-## Setup
+下載檔案使用以下格式：
 
-For setup instructions, please see the [Fabric Documentation page](https://docs.fabricmc.net/develop/getting-started/creating-a-project#setting-up) related to the IDE that you are using.
+`TChineseB-載入器-Minecraft版本-程式版本.jar`
 
-## License
+例如：
 
-This template is available under the CC0 license. Feel free to learn from it and incorporate it in your own projects.
+`TChineseB-forge-26.1-002.jar`
+
+程式版本會使用三位數編號，例如 `001`、`002`、`003`。
+
+## 注意事項
+
+- 這是用戶端模組，不需要安裝在伺服器。
+- 如果原模組或資源包已經提供繁體中文，會優先保留原作者的翻譯。
+- 自動轉換可以讓文字正常顯示為繁體中文，但用詞不一定完全符合台灣慣用語。
+- 每個 Minecraft 版本只保留最新的程式版本。
+- 某些 Minecraft 版本沒有官方 Forge；這些版本只會提供實際存在的載入器。
+
+## 授權
+
+本專案採用 CC0-1.0 授權。
