@@ -1,4 +1,4 @@
-﻿package tw.rainblue.mic.zhtwautopack;
+package tw.rainblue.mic.zhtwautopack;
 
 import java.nio.file.Files;
 import java.nio.file.Path;

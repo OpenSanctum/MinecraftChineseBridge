@@ -1,4 +1,4 @@
-﻿package com.openbook.tcb;
+package com.openbook.tcb;
 
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.entrypoint.PreLaunchEntrypoint;

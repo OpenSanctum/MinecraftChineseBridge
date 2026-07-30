@@ -1,4 +1,4 @@
-﻿package com.spensanctum.tcb;
+package com.spensanctum.tcb;
 
 import com.github.houbb.opencc4j.util.ZhConverterUtil;
 import com.github.houbb.opencc4j.util.ZhTwConverterUtil;

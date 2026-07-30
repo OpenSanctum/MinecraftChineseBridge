@@ -1,4 +1,4 @@
-﻿package com.openbook.tcb;
+package com.openbook.tcb;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;

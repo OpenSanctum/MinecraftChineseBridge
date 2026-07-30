@@ -1,4 +1,4 @@
-﻿package tw.rainblue.mic.zhtwautopack;
+package tw.rainblue.mic.zhtwautopack;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.minecraft.client.Minecraft;

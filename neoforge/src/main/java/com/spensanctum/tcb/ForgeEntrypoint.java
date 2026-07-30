@@ -1,4 +1,4 @@
-﻿package com.spensanctum.tcb;
+package com.spensanctum.tcb;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.packs.repository.PackRepository;

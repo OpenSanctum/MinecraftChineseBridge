@@ -1,4 +1,4 @@
-﻿package tw.rainblue.mic.zhtwautopack;
+package tw.rainblue.mic.zhtwautopack;
 
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.entrypoint.PreLaunchEntrypoint;

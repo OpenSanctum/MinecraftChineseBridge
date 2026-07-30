@@ -1,4 +1,4 @@
-﻿package com.openbook.tcb;
+package com.openbook.tcb;
 
 import com.github.houbb.opencc4j.util.ZhTwConverterUtil;
 import com.google.gson.JsonElement;

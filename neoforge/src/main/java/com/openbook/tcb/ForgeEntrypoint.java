@@ -1,4 +1,4 @@
-﻿package com.openbook.tcb;
+package com.openbook.tcb;
 
 import net.minecraftforge.fml.common.Mod;
 

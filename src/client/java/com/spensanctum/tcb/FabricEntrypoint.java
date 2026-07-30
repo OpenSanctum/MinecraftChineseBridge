@@ -1,4 +1,4 @@
-﻿package com.spensanctum.tcb;
+package com.spensanctum.tcb;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.loader.api.FabricLoader;

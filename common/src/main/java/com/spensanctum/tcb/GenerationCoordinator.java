@@ -1,4 +1,4 @@
-﻿package com.spensanctum.tcb;
+package com.spensanctum.tcb;
 
 import java.io.IOException;
 import java.nio.file.Files;

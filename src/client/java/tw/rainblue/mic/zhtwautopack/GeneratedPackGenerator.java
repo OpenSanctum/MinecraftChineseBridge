@@ -1,4 +1,4 @@
-﻿package tw.rainblue.mic.zhtwautopack;
+package tw.rainblue.mic.zhtwautopack;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;

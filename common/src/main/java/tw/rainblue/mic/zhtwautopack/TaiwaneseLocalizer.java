@@ -1,4 +1,4 @@
-﻿package tw.rainblue.mic.zhtwautopack;
+package tw.rainblue.mic.zhtwautopack;
 
 import com.github.houbb.opencc4j.util.ZhTwConverterUtil;
 import com.google.gson.JsonElement;

@@ -1,4 +1,4 @@
-﻿package com.spensanctum.tcb;
+package com.spensanctum.tcb;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
