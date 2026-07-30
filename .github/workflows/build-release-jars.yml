@@ -252,7 +252,7 @@ jobs:
                   print(f'Expected a single program per series, got {sorted(programs)} for {series}', file=sys.stderr)
                   sys.exit(1)
 
-              notes = f'{commit_subject}\n\nCommit: {commit_hash}\nProgram: {next_version}'
+              notes = commit_subject
 
               exists = subprocess.run(
                   ['gh', 'release', 'view', release_tag],
