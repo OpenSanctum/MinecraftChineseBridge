@@ -1,0 +1,26 @@
+{
+	"schemaVersion": 1,
+	"id": "zhtw_autopack",
+	"version": "${version}",
+	"name": "ZH-TW Auto Pack",
+	"description": "Automatically creates a Traditional Chinese language resource pack from Simplified Chinese language files.",
+	"authors": [
+		"RainBlueTW"
+	],
+	"contact": {
+		"sources": "local"
+	},
+	"license": "CC0-1.0",
+	"environment": "client",
+	"entrypoints": {
+		"main": [
+			"tw.rainblue.mic.zhtwautopack.ZhTwAutoPackClient"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.3",
+		"minecraft": "~1.20.1",
+		"java": ">=17",
+		"fabric-api": "*"
+	}
+}
