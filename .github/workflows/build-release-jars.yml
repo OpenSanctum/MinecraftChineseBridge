@@ -194,7 +194,7 @@ jobs:
             exit 1
           fi
 
-          echo "Uploading jars:"
+          echo "Uploading raw jar files directly to GitHub Release:"
           printf ' - %s\n' "${jar_files[@]}"
 
           gh release upload "$release_tag" "${jar_files[@]}" --clobber
