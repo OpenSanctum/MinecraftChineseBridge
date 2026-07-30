@@ -1,6 +1,6 @@
 package tw.rainblue.mic.zhtwautopack;
 
-import com.github.houbb.opencc4j.util.ZhTwConverterUtil;
+import com.github.houbb.opencc4j.util.ZhConverterUtil;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -270,7 +270,7 @@ final class TaiwaneseLocalizer {
         merged.putAll(loadUserTerms(gameDirectory));
         terms = merged.entrySet().stream()
                 .map(entry -> new Term(entry.getKey(),
-                        ZhTwConverterUtil.toTraditional(entry.getKey()), entry.getValue()))
+                ZhConverterUtil.toTraditional(entry.getKey()), entry.getValue()))
                 .sorted(Comparator.comparingInt((Term term) -> term.source().length()).reversed())
                 .toList();
     }
@@ -281,7 +281,7 @@ final class TaiwaneseLocalizer {
         for (Term term : terms) {
             translated = translated.replace(term.source(), term.target());
         }
-        translated = ZhTwConverterUtil.toTraditional(translated);
+        translated = ZhConverterUtil.toTraditional(translated);
         for (Term term : terms) {
             translated = translated.replace(term.traditionalSource(), term.target());
         }

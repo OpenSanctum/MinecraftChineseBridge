@@ -188,6 +188,7 @@ jobs:
           set -euo pipefail
 
           python3 <<'PY'
+          import json
           import os
           import pathlib
           import re
@@ -197,47 +198,80 @@ jobs:
           dist_dir = pathlib.Path('dist')
           jar_files = sorted(dist_dir.glob('*.jar'))
           if not jar_files:
-              print('No jar files were found in dist/ to upload', file=sys.stderr)
-              sys.exit(1)
+            print('No jar files were found in dist/ to upload', file=sys.stderr)
+            sys.exit(1)
 
           pattern = re.compile(r'^ChineseBridge-[^-]+-(?P<series>\d+\.\d+\.x)-(?P<program>\d+)\.jar$')
           grouped = {}
+          series_program = {}
           for jar in jar_files:
-              match = pattern.match(jar.name)
-              if not match:
-                  print(f'Unexpected jar filename format: {jar.name}', file=sys.stderr)
-                  sys.exit(1)
-              series = match.group('series')
-              grouped.setdefault(series, []).append(jar)
+            match = pattern.match(jar.name)
+            if not match:
+              print(f'Unexpected jar filename format: {jar.name}', file=sys.stderr)
+              sys.exit(1)
+            series = match.group('series')
+            program = match.group('program')
+            grouped.setdefault(series, []).append(jar)
+            series_program.setdefault(series, set()).add(program)
 
           next_version = os.environ.get('NEXT_VERSION', '').strip() or 'unknown'
+          commit_subject = subprocess.check_output(['git', 'log', '-1', '--pretty=%s'], text=True).strip()
+          commit_hash = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'], text=True).strip()
 
           for series in sorted(grouped.keys()):
-              release_tag = series
-              release_title = f'Minecraft {series}'
-              notes = f'Automated builds from main (program {next_version})'
+            release_tag = series
+            release_title = f'Minecraft {series}'
+            programs = series_program.get(series, set())
+            if len(programs) != 1:
+              print(f'Expected a single program per series, got {sorted(programs)} for {series}', file=sys.stderr)
+              sys.exit(1)
+            keep_program = next(iter(programs))
+            notes = f'{keep_program} 更新：{commit_subject}\n\nCommit: {commit_hash}'
 
-              exists = subprocess.run(
-                  ['gh', 'release', 'view', release_tag],
-                  stdout=subprocess.DEVNULL,
-                  stderr=subprocess.DEVNULL,
-                  check=False,
-              ).returncode == 0
+            exists = subprocess.run(
+              ['gh', 'release', 'view', release_tag],
+              stdout=subprocess.DEVNULL,
+              stderr=subprocess.DEVNULL,
+              check=False,
+            ).returncode == 0
 
-              if exists:
-                  print(f'Release {release_tag} already exists')
-              else:
-                  subprocess.check_call([
-                      'gh', 'release', 'create',
-                      release_tag,
-                      '--title', release_title,
-                      '--notes', notes,
-                  ])
+            if exists:
+              print(f'Release {release_tag} already exists')
+              subprocess.check_call([
+                'gh', 'release', 'edit',
+                release_tag,
+                '--title', release_title,
+                '--notes', notes,
+              ])
+            else:
+              subprocess.check_call([
+                'gh', 'release', 'create',
+                release_tag,
+                '--title', release_title,
+                '--notes', notes,
+              ])
 
-              files = [str(path) for path in grouped[series]]
-              print(f'Uploading jars to {release_tag}:')
-              for path in files:
-                  print(f' - {path}')
+            release_info = subprocess.check_output(
+              ['gh', 'release', 'view', release_tag, '--json', 'assets'],
+              text=True,
+            )
+            assets = json.loads(release_info).get('assets', [])
+            for asset in assets:
+              name = asset.get('name', '')
+              match = pattern.match(name)
+              if not match:
+                continue
+              if match.group('series') != series:
+                continue
+              if match.group('program') == keep_program:
+                continue
+              print(f'Removing old jar from {release_tag}: {name}')
+              subprocess.check_call(['gh', 'release', 'delete-asset', release_tag, name, '--yes'])
 
-              subprocess.check_call(['gh', 'release', 'upload', release_tag, *files, '--clobber'])
+            files = [str(path) for path in grouped[series]]
+            print(f'Uploading jars to {release_tag}:')
+            for path in files:
+              print(f' - {path}')
+
+            subprocess.check_call(['gh', 'release', 'upload', release_tag, *files, '--clobber'])
           PY
