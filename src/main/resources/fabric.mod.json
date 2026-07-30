@@ -5,10 +5,10 @@
 	"name": "Traditional Chinese Bridge",
 	"description": "Automatically creates a Traditional Chinese language resource pack from Simplified Chinese language files.",
 	"authors": [
-		"RainBlueTW"
+		"OpenSanctum"
 	],
 	"contact": {
-		"sources": "local"
+		"sources": "https://github.com/OpenSanctum/Minecraft-TCB"
 	},
 	"license": "CC0-1.0",
 	"environment": "client",

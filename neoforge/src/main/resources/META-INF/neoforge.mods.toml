@@ -6,7 +6,7 @@ license="CC0-1.0"
 modId="tchineseb"
 version="006"
 displayName="Traditional Chinese Bridge"
-authors="RainBlueTW"
+authors="OpenSanctum"
 description='''自動將簡體中文語系轉換並整合成繁體中文資源包。'''
 
 [[dependencies.tchineseb]]
