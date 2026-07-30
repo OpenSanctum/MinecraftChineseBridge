@@ -14,7 +14,11 @@
 
 ## 安裝方式
 
-1. 在 Releases 頁面找到你的 Minecraft 版本。
+1. 在 Releases 頁面找到你的 Minecraft 系列：
+   - Minecraft 1.20：選擇 `1.20.x`
+   - Minecraft 1.21：選擇 `1.21.x`
+   - Minecraft 26.1：選擇 `26.1.x`
+   - Minecraft 26.2：選擇 `26.2.x`
 2. 依照使用的載入器下載對應檔案：
    - `fabric`：Fabric
    - `forge`：Forge
@@ -41,7 +45,8 @@
 - 這是用戶端模組，不需要安裝在伺服器。
 - 如果原模組或資源包已經提供繁體中文，會優先保留原作者的翻譯。
 - 自動轉換可以讓文字正常顯示為繁體中文，但用詞不一定完全符合台灣慣用語。
-- 每個 Minecraft 版本只保留最新的程式版本。
+- Release 清單依 Minecraft 系列分組，同一系列內會提供各小版本的下載檔。
+- 每個 Minecraft 小版本只保留最新的程式版本。
 - 某些 Minecraft 版本沒有官方 Forge；這些版本只會提供實際存在的載入器。
 
 ## 授權
