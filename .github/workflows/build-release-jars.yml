@@ -1,0 +1,217 @@
+name: Build release jars
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  prepare-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+      next_version: ${{ steps.matrix.outputs.next_version }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build release matrix
+        id: matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python <<'PY'
+          import json
+          import os
+          import pathlib
+          import re
+
+          matrix_path = pathlib.Path('.github/release-matrix.json')
+          data = json.loads(matrix_path.read_text(encoding='utf-8'))
+
+          gradle_props_path = pathlib.Path('gradle.properties')
+          props_text = gradle_props_path.read_text(encoding='utf-8')
+          match = re.search(r'^mod_version\s*=\s*(\d+)', props_text, re.M)
+          if not match:
+              raise SystemExit('mod_version not found in gradle.properties')
+
+          current_version = match.group(1)
+          next_version = str(int(current_version) + 1).zfill(len(current_version))
+
+          rows = []
+          for release in data['releases']:
+              series = release['series']
+              if series.startswith('1.20'):
+                  java_version = '17'
+              else:
+                  java_version = '21'
+
+              for loader in release['loaders']:
+                  filename = data['filename'].format(
+                      loader=loader,
+                      series=series,
+                      program=next_version,
+                  )
+                  rows.append({
+                      'series': series,
+                      'program': next_version,
+                      'loader': loader,
+                      'minecraft_range': release['minecraft_range'],
+                      'java': java_version,
+                      'filename': filename,
+                  })
+
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as fh:
+              fh.write(f"matrix={json.dumps(rows)}\n")
+              fh.write(f"next_version={next_version}\n")
+          PY
+
+          if [ "${{ github.event_name }}" = "push" ]; then
+            python "$next_version" <<'PY'
+            import pathlib
+            import re
+            import sys
+
+            next_version = sys.argv[1]
+            path = pathlib.Path('gradle.properties')
+            text = path.read_text(encoding='utf-8')
+            text = re.sub(r'(?m)^mod_version\s*=.*$', f'mod_version={next_version}', text, count=1)
+            path.write_text(text, encoding='utf-8')
+            PY
+
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add gradle.properties
+            if git diff --cached --quiet; then
+              echo "No version change to commit"
+            else
+              git commit -m "chore: bump mod version to ${next_version} [skip ci]"
+              git push origin "HEAD:${GITHUB_REF_NAME}"
+            fi
+          fi
+
+  build:
+    needs: prepare-matrix
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.prepare-matrix.outputs.matrix) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java ${{ matrix.java }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: gradle
+
+      - name: Grant Gradle wrapper permission
+        shell: bash
+        run: |
+          chmod +x gradlew
+          if [ -f forge/gradlew ]; then chmod +x forge/gradlew; fi
+          if [ -f neoforge/gradlew ]; then chmod +x neoforge/gradlew; fi
+
+      - name: Build jar for ${{ matrix.loader }} / ${{ matrix.series }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          root_dir="$GITHUB_WORKSPACE"
+          mkdir -p "$root_dir/dist"
+
+          case "${{ matrix.loader }}" in
+            fabric)
+              ./gradlew -Pmod_version="${{ matrix.program }}" build
+              build_dir="$root_dir"
+              ;;
+            forge)
+              cd "$root_dir/forge"
+              ./gradlew -Pmod_version="${{ matrix.program }}" build
+              build_dir="$root_dir/forge"
+              ;;
+            neoforge)
+              cd "$root_dir/neoforge"
+              ./gradlew -Pmod_version="${{ matrix.program }}" build
+              build_dir="$root_dir/neoforge"
+              ;;
+            *)
+              echo "Unsupported loader: ${{ matrix.loader }}"
+              exit 1
+              ;;
+          esac
+
+          find "$build_dir" -type f -path '*/build/libs/*.jar' \
+            ! -name '*-sources.jar' \
+            ! -name '*-javadoc.jar' \
+            ! -name '*-dev.jar' \
+            | while read -r jar; do
+                if [[ "$jar" != *"sources"* && "$jar" != *"javadoc"* && "$jar" != *"dev"* ]]; then
+                  cp "$jar" "$root_dir/dist/${{ matrix.filename }}"
+                  break
+                fi
+              done
+
+          if [ ! -f "$root_dir/dist/${{ matrix.filename }}" ]; then
+            echo "Failed to locate built jar for ${{ matrix.filename }}" >&2
+            exit 1
+          fi
+
+      - name: Upload built jar artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.filename }}
+          path: dist/${{ matrix.filename }}
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all built jars
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create or update GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          release_tag="main-builds"
+          if gh release view "$release_tag" >/dev/null 2>&1; then
+            echo "Release $release_tag already exists"
+          else
+            gh release create "$release_tag" --title "Main builds" --notes "Automated builds from main" --prerelease
+          fi
+
+          python <<'PY'
+          import json
+          import subprocess
+
+          release_tag = 'main-builds'
+          try:
+              output = subprocess.check_output(['gh', 'release', 'view', release_tag, '--json', 'assets'], text=True)
+              assets = json.loads(output).get('assets', [])
+          except subprocess.CalledProcessError:
+              assets = []
+
+          for asset in assets:
+              name = asset.get('name', '')
+              if name.endswith('.jar'):
+                  subprocess.check_call(['gh', 'release', 'delete-asset', release_tag, name, '--yes'])
+          PY
+
+          gh release upload "$release_tag" dist/*.jar --clobber
