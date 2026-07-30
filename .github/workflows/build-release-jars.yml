@@ -71,7 +71,11 @@ jobs:
               fh.write(f"next_version={next_version}\n")
           PY
 
-          echo "Using version ${next_version} for this build"
+          if [ -n "${next_version:-}" ]; then
+            echo "Using version ${next_version} for this build"
+          else
+            echo "Using version from gradle.properties"
+          fi
 
   build:
     needs: prepare-matrix
