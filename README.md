@@ -95,4 +95,4 @@ ChineseBridge 會自動找到現有的中文翻譯，補齊其他尚未支援的
 
 ## 授權
 
-本專案採用 [CC0-1.0](LICENSE) 授權，由 [OpenSanctum](https://github.com/OpenSanctum) 製作。
+本專案採用 [MIT License](LICENSE) 授權，由 [OpenSanctum](https://github.com/OpenSanctum) 製作。
