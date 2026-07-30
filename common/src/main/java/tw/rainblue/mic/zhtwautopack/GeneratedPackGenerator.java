@@ -32,7 +32,7 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-final class GeneratedPackGenerator {
+final class SharedGeneratedPackGenerator {
     private static final Pattern RELEASE_JAR =
             Pattern.compile("^ChineseBridge-(?:fabric|forge|neoforge)-(.+)-(?:\\d{3})\\.jar$");
     private static final String CN_SUFFIX = "/lang/zh_cn.json";
@@ -44,7 +44,7 @@ final class GeneratedPackGenerator {
     private final TaiwaneseLocalizer localizer;
     private final SourceHashCache sourceHashCache;
 
-    GeneratedPackGenerator(Path gameDirectory) throws IOException {
+    SharedGeneratedPackGenerator(Path gameDirectory) throws IOException {
         this.gameDirectory = gameDirectory;
         this.minecraftVersion = detectMinecraftVersion();
         this.packFile = "ChineseBridge-" + minecraftVersion + ".zip";
@@ -248,7 +248,7 @@ final class GeneratedPackGenerator {
         String override = System.getProperty("chinesebridge.minecraftVersion");
         if (override != null && !override.isBlank()) return override;
         try {
-            CodeSource source = GeneratedPackGenerator.class.getProtectionDomain().getCodeSource();
+            CodeSource source = SharedGeneratedPackGenerator.class.getProtectionDomain().getCodeSource();
             if (source != null) {
                 String name = Path.of(source.getLocation().toURI()).getFileName().toString();
                 Matcher matcher = RELEASE_JAR.matcher(name);

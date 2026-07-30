@@ -1,0 +1,154 @@
+#!/usr/bin/env python3
+import argparse
+import json
+import os
+import platform
+import re
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+MATRIX_PATH = ROOT / '.github' / 'release-matrix.json'
+GRADLE_PROPS_PATH = ROOT / 'gradle.properties'
+DIST_DIR = ROOT / 'dist'
+
+
+def read_release_matrix():
+    with MATRIX_PATH.open('r', encoding='utf-8') as fh:
+        return json.load(fh)
+
+
+def read_current_version():
+    text = GRADLE_PROPS_PATH.read_text(encoding='utf-8')
+    match = re.search(r'^mod_version\s*=\s*(\d+)', text, re.M)
+    if not match:
+        raise RuntimeError('mod_version not found in gradle.properties')
+    return match.group(1)
+
+
+def bump_version():
+    current = read_current_version()
+    next_version = str(int(current) + 1).zfill(len(current))
+    text = GRADLE_PROPS_PATH.read_text(encoding='utf-8')
+    text = re.sub(r'(?m)^mod_version\s*=.*$', f'mod_version={next_version}', text, count=1)
+    GRADLE_PROPS_PATH.write_text(text, encoding='utf-8')
+    print(f'Bumped version from {current} to {next_version}')
+    return next_version
+
+
+def ensure_java():
+    java_home = os.environ.get('JAVA_HOME')
+    if java_home and os.path.exists(java_home):
+        return java_home
+
+    if platform.system() == 'Windows':
+        candidates = [
+            r'C:\Program Files\Eclipse Adoptium\jdk-21.0.12.8-hotspot',
+            r'C:\Program Files\Java\jdk-21',
+            r'C:\Program Files\Java\jdk-17',
+        ]
+    else:
+        candidates = [
+            '/Library/Java/JavaVirtualMachines',
+            '/usr/lib/jvm',
+        ]
+
+    for candidate in candidates:
+        if os.path.isdir(candidate):
+            if platform.system() == 'Windows':
+                return candidate
+            # macOS / Linux: look for a Java home inside the directory
+            for child in sorted(Path(candidate).glob('*')):
+                if child.is_dir() and (child / 'bin' / 'java').exists():
+                    return str(child)
+
+    raise RuntimeError('Java 21 not found. Please install Temurin 21 JDK and set JAVA_HOME.')
+
+
+def run_command(cmd, cwd=None, env=None):
+    print('> ' + ' '.join(cmd))
+    subprocess.run(cmd, cwd=cwd, env=env, check=True)
+
+
+def build_loader(loader, version, project_dir):
+    gradlew = 'gradlew.bat' if platform.system() == 'Windows' else './gradlew'
+    cmd = [gradlew, '--no-daemon', '--max-workers=1', '-Pmod_version=' + version, 'assemble']
+    env = os.environ.copy()
+    java_home = ensure_java()
+    env['JAVA_HOME'] = java_home
+    if platform.system() == 'Windows':
+        env['Path'] = java_home + r'\bin;' + env.get('Path', '')
+    else:
+        env['PATH'] = str(Path(java_home) / 'bin') + os.pathsep + env.get('PATH', '')
+    run_command(cmd, cwd=project_dir, env=env)
+
+
+def copy_output(project_dir, target_name):
+    jar_candidates = []
+    for pattern in ['**/build/libs/*.jar', '**/build/libs/*/*.jar']:
+        jar_candidates.extend(project_dir.glob(pattern))
+    jar_candidates = [p for p in jar_candidates if p.is_file() and 'sources' not in p.name.lower() and 'javadoc' not in p.name.lower() and 'dev' not in p.name.lower()]
+    if not jar_candidates:
+        raise RuntimeError(f'No jar found in {project_dir}')
+    jar_path = sorted(jar_candidates)[0]
+    target_path = DIST_DIR / target_name
+    shutil.copy2(jar_path, target_path)
+    print(f'Created {target_path}')
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Build release jars locally and optionally upload them to GitHub Releases.')
+    parser.add_argument('--version', help='Override the release program/version number (e.g. 012)')
+    parser.add_argument('--loader', choices=['fabric', 'forge', 'neoforge', 'all'], default='all')
+    parser.add_argument('--series', help='Only build a specific series like 1.20.x or 26.2.x')
+    parser.add_argument('--skip-bump', action='store_true', help='Do not increment the version in gradle.properties')
+    parser.add_argument('--upload', action='store_true', help='Upload generated jars to a GitHub Release')
+    parser.add_argument('--release-tag', default='main-builds', help='GitHub Release tag to upload to')
+    return parser.parse_args()
+
+
+def upload_to_github(release_tag, dist_dir):
+    if shutil.which('gh') is None:
+        raise RuntimeError('GitHub CLI (gh) is required for upload. Install it first.')
+    subprocess.run(['gh', 'release', 'view', release_tag], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if subprocess.run(['gh', 'release', 'view', release_tag], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode != 0:
+        subprocess.run(['gh', 'release', 'create', release_tag, '--title', 'Main builds', '--notes', 'Local builds', '--prerelease'], check=True)
+    for jar in sorted(dist_dir.glob('*.jar')):
+        subprocess.run(['gh', 'release', 'upload', release_tag, str(jar), '--clobber'], check=True)
+
+
+def build_all(args):
+    data = read_release_matrix()
+    version = args.version or (read_current_version() if args.skip_bump else bump_version())
+    DIST_DIR.mkdir(exist_ok=True)
+
+    for release in data['releases']:
+        series = release['series']
+        if args.series and series != args.series:
+            continue
+        for loader in release['loaders']:
+            if args.loader != 'all' and loader != args.loader:
+                continue
+            filename = data['filename'].format(loader=loader, series=series, program=version)
+            if loader == 'fabric':
+                build_loader(loader, version, ROOT)
+                copy_output(ROOT, filename)
+            elif loader == 'forge':
+                build_loader(loader, version, ROOT / 'forge')
+                copy_output(ROOT / 'forge', filename)
+            elif loader == 'neoforge':
+                build_loader(loader, version, ROOT / 'neoforge')
+                copy_output(ROOT / 'neoforge', filename)
+            else:
+                raise RuntimeError(f'Unsupported loader: {loader}')
+
+    print('All release jars generated in', DIST_DIR)
+    if args.upload:
+        upload_to_github(args.release_tag, DIST_DIR)
+        print('Uploaded jars to GitHub Release', args.release_tag)
+
+
+if __name__ == '__main__':
+    build_all(parse_args())

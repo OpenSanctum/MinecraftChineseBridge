@@ -11,8 +11,8 @@ public final class NeoForgeEntrypoint {
     public NeoForgeEntrypoint() {
         if (!isClient()) return;
         try {
-            GeneratedPackGenerator.Result result =
-                    new GeneratedPackGenerator(Path.of(System.getProperty("user.dir"))).generateAndEnable();
+            SharedGeneratedPackGenerator.Result result =
+                    new SharedGeneratedPackGenerator(Path.of(System.getProperty("user.dir"))).generateAndEnable();
             System.out.printf("[ChineseBridge] 已產生 %s，共 %d 個語系檔。%n",
                     result.packFile(), result.filesWritten());
         } catch (Exception exception) {

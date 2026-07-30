@@ -46,10 +46,7 @@ jobs:
           rows = []
           for release in data['releases']:
               series = release['series']
-              if series.startswith('1.20'):
-                  java_version = '17'
-              else:
-                  java_version = '21'
+              java_version = '17' if series.startswith('1.20') else '21'
 
               for loader in release['loaders']:
                   filename = data['filename'].format(
@@ -97,6 +94,16 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: gradle
 
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle.properties', '**/settings.gradle') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
       - name: Grant Gradle wrapper permission
         shell: bash
         run: |
@@ -114,17 +121,17 @@ jobs:
 
           case "${{ matrix.loader }}" in
             fabric)
-              ./gradlew -Pmod_version="${{ matrix.program }}" build
+              ./gradlew --no-daemon --max-workers=1 -Pmod_version="${{ matrix.program }}" assemble
               build_dir="$root_dir"
               ;;
             forge)
               cd "$root_dir/forge"
-              ./gradlew -Pmod_version="${{ matrix.program }}" build
+              ./gradlew --no-daemon --max-workers=1 -Pmod_version="${{ matrix.program }}" assemble
               build_dir="$root_dir/forge"
               ;;
             neoforge)
               cd "$root_dir/neoforge"
-              ./gradlew -Pmod_version="${{ matrix.program }}" build
+              ./gradlew --no-daemon --max-workers=1 -Pmod_version="${{ matrix.program }}" assemble
               build_dir="$root_dir/neoforge"
               ;;
             *)
