@@ -179,6 +179,12 @@ jobs:
         run: |
           set -euo pipefail
 
+          if [ ! -d .git ]; then
+            git init
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          fi
+
           release_tag="main-builds"
           if gh release view "$release_tag" >/dev/null 2>&1; then
             echo "Release $release_tag already exists"
