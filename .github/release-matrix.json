@@ -1,0 +1,27 @@
+{
+  "filename": "TChineseB-{loader}-{minecraft}-{program}.jar",
+  "releases": [
+    {"minecraft":"1.20.1","program":"003","loaders":["fabric","forge","neoforge"]},
+    {"minecraft":"1.20.2","program":"001","loaders":["fabric","forge","neoforge"]},
+    {"minecraft":"1.20.3","program":"001","loaders":["fabric","forge","neoforge"]},
+    {"minecraft":"1.20.4","program":"001","loaders":["fabric","forge","neoforge"]},
+    {"minecraft":"1.20.5","program":"001","loaders":["fabric","neoforge"]},
+    {"minecraft":"1.20.6","program":"001","loaders":["fabric","forge","neoforge"]},
+    {"minecraft":"1.21","program":"001","loaders":["fabric","forge","neoforge"]},
+    {"minecraft":"1.21.1","program":"001","loaders":["fabric","forge","neoforge"]},
+    {"minecraft":"1.21.2","program":"001","loaders":["fabric","neoforge"]},
+    {"minecraft":"1.21.3","program":"001","loaders":["fabric","forge","neoforge"]},
+    {"minecraft":"1.21.4","program":"001","loaders":["fabric","forge","neoforge"]},
+    {"minecraft":"1.21.5","program":"001","loaders":["fabric","forge","neoforge"]},
+    {"minecraft":"1.21.6","program":"001","loaders":["fabric","forge","neoforge"]},
+    {"minecraft":"1.21.7","program":"001","loaders":["fabric","forge","neoforge"]},
+    {"minecraft":"1.21.8","program":"001","loaders":["fabric","forge","neoforge"]},
+    {"minecraft":"1.21.9","program":"001","loaders":["fabric","forge","neoforge"]},
+    {"minecraft":"1.21.10","program":"001","loaders":["fabric","forge","neoforge"]},
+    {"minecraft":"1.21.11","program":"001","loaders":["fabric","forge","neoforge"]},
+    {"minecraft":"26.1","program":"001","loaders":["fabric","forge","neoforge"]},
+    {"minecraft":"26.1.1","program":"001","loaders":["fabric","forge","neoforge"]},
+    {"minecraft":"26.1.2","program":"001","loaders":["fabric","forge","neoforge"]},
+    {"minecraft":"26.2","program":"001","loaders":["fabric","forge","neoforge"]}
+  ]
+}

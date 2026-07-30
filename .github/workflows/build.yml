@@ -17,14 +17,23 @@ jobs:
       - name: setup jdk
         uses: actions/setup-java@v5
         with:
-          java-version: '25'
+          java-version: '17'
           distribution: 'microsoft'
       - name: make gradle wrapper executable
-        run: chmod +x ./gradlew
-      - name: build
+        run: chmod +x ./gradlew ./forge/gradlew ./neoforge/gradlew
+      - name: build Fabric
+        run: ./gradlew build
+      - name: build Forge
+        working-directory: forge
+        run: ./gradlew build
+      - name: build NeoForge
+        working-directory: neoforge
         run: ./gradlew build
       - name: capture build artifacts
         uses: actions/upload-artifact@v7
         with:
           name: Artifacts
-          path: build/libs/
+          path: |
+            build/libs/
+            forge/build/libs/
+            neoforge/build/libs/

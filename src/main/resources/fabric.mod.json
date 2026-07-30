@@ -13,14 +13,13 @@
 	"license": "CC0-1.0",
 	"environment": "client",
 	"entrypoints": {
-		"client": [
-			"tw.rainblue.mic.zhtwautopack.ZhTwAutoPackClient"
+		"preLaunch": [
+			"tw.rainblue.mic.zhtwautopack.ZhTwAutoPackPreLaunch"
 		]
 	},
 	"depends": {
 		"fabricloader": ">=0.15.11",
-		"minecraft": "~1.20.1",
-		"java": ">=17",
-		"fabric-api": "*"
+		"minecraft": ">=1.20.1 <=26.2",
+		"java": ">=17"
 	}
 }
