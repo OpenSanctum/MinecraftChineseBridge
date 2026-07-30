@@ -1,6 +1,5 @@
 package tw.rainblue.mic.zhtwautopack;
 
-import com.github.houbb.opencc4j.util.ZhConverterUtil;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -11,7 +10,6 @@ import com.google.gson.stream.JsonWriter;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -42,11 +40,13 @@ final class GeneratedPackGenerator {
     private final Path gameDirectory;
     private final String minecraftVersion;
     private final String packFile;
+    private final TaiwaneseLocalizer localizer;
 
-    GeneratedPackGenerator(Path gameDirectory) {
+    GeneratedPackGenerator(Path gameDirectory) throws IOException {
         this.gameDirectory = gameDirectory;
         this.minecraftVersion = detectMinecraftVersion();
         this.packFile = "TChineseB-" + minecraftVersion + ".zip";
+        this.localizer = new TaiwaneseLocalizer(gameDirectory);
     }
 
     Result generateAndEnable() throws IOException {
@@ -187,7 +187,7 @@ final class GeneratedPackGenerator {
         for (Map.Entry<String, JsonElement> entry : source.entrySet()) {
             JsonElement value = entry.getValue();
             translated.add(entry.getKey(), value.isJsonPrimitive() && value.getAsJsonPrimitive().isString()
-                    ? new JsonPrimitive(ZhConverterUtil.toTraditional(value.getAsString())) : value);
+                    ? new JsonPrimitive(localizer.localize(value.getAsString())) : value);
         }
         try (Writer raw = Files.newBufferedWriter(target, StandardCharsets.UTF_8);
              JsonWriter writer = new JsonWriter(raw)) {
