@@ -186,28 +186,15 @@ jobs:
             gh release create "$release_tag" --title "Main builds" --notes "Automated builds from main" --prerelease
           fi
 
-          python <<'PY'
-          import json
-          import subprocess
-
-          release_tag = 'main-builds'
-          try:
-              output = subprocess.check_output(['gh', 'release', 'view', release_tag, '--json', 'assets'], text=True)
-              assets = json.loads(output).get('assets', [])
-          except subprocess.CalledProcessError:
-              assets = []
-
-          for asset in assets:
-              name = asset.get('name', '')
-              if name.endswith('.jar'):
-                  subprocess.check_call(['gh', 'release', 'delete-asset', release_tag, name, '--yes'])
-          PY
-
           shopt -s nullglob
           jar_files=(dist/*.jar)
           if [ ${#jar_files[@]} -eq 0 ]; then
             echo "No jar files were found in dist/ to upload" >&2
+            ls -la dist || true
             exit 1
           fi
+
+          echo "Uploading jars:"
+          printf ' - %s\n' "${jar_files[@]}"
 
           gh release upload "$release_tag" "${jar_files[@]}" --clobber
