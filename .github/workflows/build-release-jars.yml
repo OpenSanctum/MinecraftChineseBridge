@@ -163,9 +163,16 @@ jobs:
           path: dist/${{ matrix.filename }}
 
   publish:
-    needs: build
+    needs:
+      - prepare-matrix
+      - build
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Download all built jars
         uses: actions/download-artifact@v4
         with:
@@ -175,36 +182,62 @@ jobs:
       - name: Create or update GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEXT_VERSION: ${{ needs.prepare-matrix.outputs.next_version }}
         shell: bash
         run: |
           set -euo pipefail
 
-          if [ ! -d .git ]; then
-            git init
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          fi
+          python3 <<'PY'
+          import os
+          import pathlib
+          import re
+          import subprocess
+          import sys
 
-          if ! git remote get-url origin >/dev/null 2>&1; then
-            git remote add origin "https://github.com/OpenSanctum/MinecraftChineseBridge.git"
-          fi
+          dist_dir = pathlib.Path('dist')
+          jar_files = sorted(dist_dir.glob('*.jar'))
+          if not jar_files:
+              print('No jar files were found in dist/ to upload', file=sys.stderr)
+              sys.exit(1)
 
-          release_tag="main-builds"
-          if gh release view "$release_tag" >/dev/null 2>&1; then
-            echo "Release $release_tag already exists"
-          else
-            gh release create "$release_tag" --title "Main builds" --notes "Automated builds from main" --prerelease
-          fi
+          pattern = re.compile(r'^ChineseBridge-[^-]+-(?P<series>\d+\.\d+\.x)-(?P<program>\d+)\.jar$')
+          grouped = {}
+          for jar in jar_files:
+              match = pattern.match(jar.name)
+              if not match:
+                  print(f'Unexpected jar filename format: {jar.name}', file=sys.stderr)
+                  sys.exit(1)
+              series = match.group('series')
+              grouped.setdefault(series, []).append(jar)
 
-          shopt -s nullglob
-          jar_files=(dist/*.jar)
-          if [ ${#jar_files[@]} -eq 0 ]; then
-            echo "No jar files were found in dist/ to upload" >&2
-            ls -la dist || true
-            exit 1
-          fi
+          next_version = os.environ.get('NEXT_VERSION', '').strip() or 'unknown'
 
-          echo "Uploading raw jar files directly to GitHub Release:"
-          printf ' - %s\n' "${jar_files[@]}"
+          for series in sorted(grouped.keys()):
+              release_tag = series
+              release_title = f'Minecraft {series}'
+              notes = f'Automated builds from main (program {next_version})'
 
-          gh release upload "$release_tag" "${jar_files[@]}" --clobber
+              exists = subprocess.run(
+                  ['gh', 'release', 'view', release_tag],
+                  stdout=subprocess.DEVNULL,
+                  stderr=subprocess.DEVNULL,
+                  check=False,
+              ).returncode == 0
+
+              if exists:
+                  print(f'Release {release_tag} already exists')
+              else:
+                  subprocess.check_call([
+                      'gh', 'release', 'create',
+                      release_tag,
+                      '--title', release_title,
+                      '--notes', notes,
+                  ])
+
+              files = [str(path) for path in grouped[series]]
+              print(f'Uploading jars to {release_tag}:')
+              for path in files:
+                  print(f' - {path}')
+
+              subprocess.check_call(['gh', 'release', 'upload', release_tag, *files, '--clobber'])
+          PY
