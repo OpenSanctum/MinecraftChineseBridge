@@ -21,7 +21,7 @@ public final class FabricEntrypoint implements ClientModInitializer {
         ArrayList<String> selected = new ArrayList<>(packs.getSelectedIds());
         packs.reload();
         if (request.selectAtHighestPriority()) {
-            selected.removeIf(id -> id.startsWith("file/TChineseB-"));
+            selected.removeIf(id -> id.startsWith("file/TChineseB-") || id.startsWith("file/ChineseBridge-"));
             selected.add(request.packId());
         } else if (selected.stream().noneMatch(id -> id.equals(request.packId()))) {
             selected.add(request.packId());

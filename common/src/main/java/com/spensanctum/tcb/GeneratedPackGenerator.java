@@ -33,7 +33,7 @@ import java.util.zip.ZipOutputStream;
 
 final class GeneratedPackGenerator {
     private static final Pattern RELEASE_JAR =
-            Pattern.compile("^TChineseB-(?:fabric|forge|neoforge)-(.+)-(?:\\d{3})\\.jar$");
+        Pattern.compile("^ChineseBridge-(?:fabric|forge|neoforge)-(.+)-(?:\\d{3})\\.jar$");
     private static final String OLD_PACK_ID = "file/ZH-TW Auto Pack";
     private static final String STATE_FILE = "tchineseb-state.json";
     private final Path gameDirectory;
@@ -44,7 +44,7 @@ final class GeneratedPackGenerator {
     GeneratedPackGenerator(Path gameDirectory) throws IOException {
         this.gameDirectory = gameDirectory;
         this.minecraftVersion = detectMinecraftVersion();
-        this.packFile = "TChineseB-" + minecraftVersion + ".zip";
+        this.packFile = "ChineseBridge-" + minecraftVersion + ".zip";
         this.localizer = new TaiwaneseLocalizer(gameDirectory);
     }
 
@@ -62,7 +62,7 @@ final class GeneratedPackGenerator {
 
         Path resourcePacks = gameDirectory.resolve("resourcepacks");
         Files.createDirectories(resourcePacks);
-        Path staging = resourcePacks.resolve(".tchineseb-staging");
+        Path staging = resourcePacks.resolve(".ChineseBridge-staging");
         deleteTree(staging);
         Files.createDirectories(staging);
         Files.writeString(staging.resolve("pack.mcmeta"), packMetadata(), StandardCharsets.UTF_8);
@@ -105,7 +105,9 @@ final class GeneratedPackGenerator {
                         .filter(path -> {
                             String name = path.getFileName().toString();
                             return !name.equals(".tchineseb-staging")
-                                    && !(name.startsWith("TChineseB-") && name.endsWith(".zip"));
+                                    && !name.equals(".ChineseBridge-staging")
+                                    && !(name.startsWith("TChineseB-") && name.endsWith(".zip"))
+                                    && !(name.startsWith("ChineseBridge-") && name.endsWith(".zip"));
                         })
                         .forEach(results::add);
             }
@@ -187,7 +189,9 @@ final class GeneratedPackGenerator {
             JsonArray updated = new JsonArray();
             for (JsonElement element : packs) {
                 String id = element.getAsString();
-                if (!id.equals(OLD_PACK_ID) && !id.startsWith("file/TChineseB-")) updated.add(id);
+                if (!id.equals(OLD_PACK_ID)
+                        && !id.startsWith("file/TChineseB-")
+                        && !id.startsWith("file/ChineseBridge-")) updated.add(id);
             }
             updated.add(wanted);
             lines.set(index, "resourcePacks:" + updated);
@@ -276,8 +280,8 @@ final class GeneratedPackGenerator {
     }
 
     private void writePackIcon(Path target) throws IOException {
-        try (InputStream icon = GeneratedPackGenerator.class.getResourceAsStream("/tchineseb-pack.png")) {
-            if (icon == null) throw new IOException("找不到內建資源包圖示 tchineseb-pack.png");
+        try (InputStream icon = GeneratedPackGenerator.class.getResourceAsStream("/ChineseBridge-pack.png")) {
+            if (icon == null) throw new IOException("找不到內建資源包圖示 ChineseBridge-pack.png");
             Files.copy(icon, target, StandardCopyOption.REPLACE_EXISTING);
         }
     }
@@ -324,7 +328,7 @@ final class GeneratedPackGenerator {
                       "min_inclusive": 15,
                       "max_inclusive": 999
                     },
-                    "description": "TChineseB 自動補充的中文語系"
+                                        "description": "ChineseBridge 自動補充的中文語系"
                   }
                 }
                 """;

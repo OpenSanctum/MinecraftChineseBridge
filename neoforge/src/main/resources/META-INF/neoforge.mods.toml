@@ -4,8 +4,8 @@ license="CC0-1.0"
 
 [[mods]]
 modId="tchineseb"
-version="010"
-displayName="Minecraft Chinese Bridge"
+version="011"
+displayName="ChineseBridge"
 authors="OpenSanctum"
 description='''自動補齊簡體中文、中文（台灣）與中文（香港）缺少的語系資源。'''
 

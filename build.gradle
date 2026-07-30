@@ -6,7 +6,7 @@ plugins {
 version = project.mod_version
 group = project.maven_group
 base {
-	archivesName = "zhtw-autopack-fabric"
+	archivesName = "ChineseBridge-fabric"
 }
 
 sourceSets.main.resources.srcDir "common/src/main/resources"

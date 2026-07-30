@@ -131,7 +131,7 @@ final class SourceHashCache {
         if (!Files.isRegularFile(path)) return false;
         String name = path.getFileName().toString();
         if (name.endsWith(".tmp")) return false;
-        if (name.startsWith("TChineseB-") && name.endsWith(".zip")) return false;
+        if ((name.startsWith("TChineseB-") || name.startsWith("ChineseBridge-")) && name.endsWith(".zip")) return false;
         return name.endsWith(".jar")
                 || name.endsWith(".zip")
                 || name.equals("zh_cn.json")

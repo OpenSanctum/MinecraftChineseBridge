@@ -160,8 +160,8 @@ final class GenerationCoordinator {
 
     private boolean isTrackedSource(Path path) {
         String name = path.getFileName().toString();
-        if (name.equals(".tchineseb-staging") || name.endsWith(".tmp")) return false;
-        if (name.startsWith("TChineseB-") && name.endsWith(".zip")) return false;
+        if (name.equals(".tchineseb-staging") || name.equals(".ChineseBridge-staging") || name.endsWith(".tmp")) return false;
+        if ((name.startsWith("TChineseB-") || name.startsWith("ChineseBridge-")) && name.endsWith(".zip")) return false;
         return Files.isRegularFile(path)
                 && (name.endsWith(".jar")
                 || name.endsWith(".zip")
