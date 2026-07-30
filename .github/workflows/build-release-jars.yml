@@ -140,16 +140,42 @@ jobs:
               ;;
           esac
 
-          find "$build_dir" -type f -path '*/build/libs/*.jar' \
-            ! -name '*-sources.jar' \
-            ! -name '*-javadoc.jar' \
-            ! -name '*-dev.jar' \
-            | while read -r jar; do
-                if [[ "$jar" != *"sources"* && "$jar" != *"javadoc"* && "$jar" != *"dev"* ]]; then
-                  cp "$jar" "$root_dir/dist/${{ matrix.filename }}"
-                  break
-                fi
-              done
+          shopt -s nullglob
+          jar_candidates=("$build_dir"/build/libs/*.jar)
+          filtered=()
+          for jar in "${jar_candidates[@]}"; do
+            name="$(basename "$jar")"
+            if [[ "$name" == *"-sources.jar" || "$name" == *"-javadoc.jar" || "$name" == *"-dev.jar" ]]; then
+              continue
+            fi
+            filtered+=("$jar")
+          done
+
+          selected_jar=""
+          if [[ "${{ matrix.loader }}" == "forge" || "${{ matrix.loader }}" == "neoforge" ]]; then
+            for jar in "${filtered[@]}"; do
+              if [[ "$jar" == *"-all.jar" ]]; then
+                selected_jar="$jar"
+                break
+              fi
+            done
+          else
+            for jar in "${filtered[@]}"; do
+              if [[ "$jar" != *"-all.jar" ]]; then
+                selected_jar="$jar"
+                break
+              fi
+            done
+          fi
+
+          if [[ -z "$selected_jar" && ${#filtered[@]} -gt 0 ]]; then
+            selected_jar="${filtered[0]}"
+          fi
+
+          if [[ -n "$selected_jar" ]]; then
+            cp "$selected_jar" "$root_dir/dist/${{ matrix.filename }}"
+            echo "Selected artifact: $selected_jar"
+          fi
 
           if [ ! -f "$root_dir/dist/${{ matrix.filename }}" ]; then
             echo "Failed to locate built jar for ${{ matrix.filename }}" >&2

@@ -85,17 +85,33 @@ def build_loader(loader, version, project_dir):
     run_command(cmd, cwd=project_dir, env=env)
 
 
-def copy_output(project_dir, target_name):
+def copy_output(project_dir, target_name, loader):
     jar_candidates = []
     for pattern in ['**/build/libs/*.jar', '**/build/libs/*/*.jar']:
         jar_candidates.extend(project_dir.glob(pattern))
-    jar_candidates = [p for p in jar_candidates if p.is_file() and 'sources' not in p.name.lower() and 'javadoc' not in p.name.lower() and 'dev' not in p.name.lower()]
+    jar_candidates = [
+        p for p in jar_candidates
+        if p.is_file()
+        and 'sources' not in p.name.lower()
+        and 'javadoc' not in p.name.lower()
+        and 'dev' not in p.name.lower()
+    ]
     if not jar_candidates:
         raise RuntimeError(f'No jar found in {project_dir}')
-    jar_path = sorted(jar_candidates)[0]
+
+    # Forge/NeoForge require the fat jar containing bundled dependencies.
+    if loader in {'forge', 'neoforge'}:
+        all_candidates = [p for p in jar_candidates if p.name.endswith('-all.jar')]
+        if not all_candidates:
+            raise RuntimeError(f'No *-all.jar found in {project_dir} for {loader}')
+        jar_path = sorted(all_candidates)[0]
+    else:
+        regular_candidates = [p for p in jar_candidates if not p.name.endswith('-all.jar')]
+        jar_path = sorted(regular_candidates or jar_candidates)[0]
+
     target_path = DIST_DIR / target_name
     shutil.copy2(jar_path, target_path)
-    print(f'Created {target_path}')
+    print(f'Created {target_path} <- {jar_path.name}')
 
 
 def parse_args():
@@ -134,13 +150,13 @@ def build_all(args):
             filename = data['filename'].format(loader=loader, series=series, program=version)
             if loader == 'fabric':
                 build_loader(loader, version, ROOT)
-                copy_output(ROOT, filename)
+                copy_output(ROOT, filename, loader)
             elif loader == 'forge':
                 build_loader(loader, version, ROOT / 'forge')
-                copy_output(ROOT / 'forge', filename)
+                copy_output(ROOT / 'forge', filename, loader)
             elif loader == 'neoforge':
                 build_loader(loader, version, ROOT / 'neoforge')
-                copy_output(ROOT / 'neoforge', filename)
+                copy_output(ROOT / 'neoforge', filename, loader)
             else:
                 raise RuntimeError(f'Unsupported loader: {loader}')
 
