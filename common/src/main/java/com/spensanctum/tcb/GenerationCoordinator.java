@@ -35,7 +35,7 @@ final class GenerationCoordinator {
         Thread monitor = new Thread(() -> {
             try {
                 new GenerationCoordinator(gameDirectory, reloadResources).monitor();
-            } catch (Exception exception) {
+            } catch (Throwable exception) {
                 System.err.println("[TChineseB] 無法啟動翻譯監控");
                 exception.printStackTrace();
                 STARTED.set(false);
@@ -83,7 +83,7 @@ final class GenerationCoordinator {
                         "file/" + result.packFile(), result.initialSetupPerformed()));
             }
             return true;
-        } catch (Exception exception) {
+        } catch (Throwable exception) {
             System.err.println("[TChineseB] 無法更新繁體中文資源包，稍後會重試");
             exception.printStackTrace();
             return false;

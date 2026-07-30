@@ -3,8 +3,8 @@ package com.spensanctum.tcb;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.packs.repository.PackRepository;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.loading.FMLPaths;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 
 @Mod(NeoForgeEntrypoint.MOD_ID)
@@ -13,7 +13,7 @@ public final class NeoForgeEntrypoint {
 
     public NeoForgeEntrypoint() {
         if (!isClient()) return;
-        GenerationCoordinator.start(Path.of(System.getProperty("user.dir")), request -> {
+        GenerationCoordinator.start(FMLPaths.GAMEDIR.get(), request -> {
             Minecraft client = Minecraft.getInstance();
             if (client != null) client.execute(() -> reload(client, request));
         });
