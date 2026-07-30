@@ -21,13 +21,15 @@ public final class NeoForgeEntrypoint {
 
     private void reload(Minecraft client, GenerationCoordinator.ReloadRequest request) {
         PackRepository packs = client.getResourcePackRepository();
+        ArrayList<String> selected = new ArrayList<>(packs.getSelectedIds());
         packs.reload();
         if (request.selectAtHighestPriority()) {
-            ArrayList<String> selected = new ArrayList<>(packs.getSelectedIds());
             selected.removeIf(id -> id.startsWith("file/TChineseB-"));
             selected.add(request.packId());
-            packs.setSelected(selected);
+        } else if (selected.stream().noneMatch(id -> id.equals(request.packId()))) {
+            selected.add(request.packId());
         }
+        packs.setSelected(selected);
         client.reloadResourcePacks();
     }
 

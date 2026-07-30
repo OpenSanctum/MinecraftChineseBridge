@@ -21,12 +21,14 @@ final class GenerationCoordinator {
 
     private final Path gameDirectory;
     private final GeneratedPackGenerator generator;
+    private final SourceHashCache sourceCache;
     private final Consumer<ReloadRequest> reloadResources;
 
     private GenerationCoordinator(Path gameDirectory, Consumer<ReloadRequest> reloadResources)
             throws IOException {
         this.gameDirectory = gameDirectory;
         this.generator = new GeneratedPackGenerator(gameDirectory);
+        this.sourceCache = new SourceHashCache(gameDirectory);
         this.reloadResources = reloadResources;
     }
 
@@ -47,23 +49,42 @@ final class GenerationCoordinator {
 
     private void monitor() throws InterruptedException {
         Thread.sleep(INITIAL_DELAY_MILLIS);
-        rebuild();
+        SourceHashCache.Snapshot initial = capture();
+        String appliedHash = initial.aggregateHash();
+        if (sourceCache.contentChanged(initial)
+                || !Files.exists(generator.generatedPackPath())
+                || generator.isInitialSetupPending()) {
+            if (!rebuild(initial)) appliedHash = "";
+        } else {
+            System.out.println("[TChineseB] 模組與資源包內容未變，略過翻譯與資源重新載入。");
+        }
 
         String observed = fingerprint();
         boolean pending = false;
         long stableSince = System.currentTimeMillis();
         while (!Thread.currentThread().isInterrupted()) {
             Thread.sleep(POLL_INTERVAL_MILLIS);
-            String current = fingerprint();
-            if (!current.equals(observed)) {
-                observed = current;
+            String currentFingerprint = fingerprint();
+            if (!currentFingerprint.equals(observed)) {
+                observed = currentFingerprint;
                 stableSince = System.currentTimeMillis();
                 pending = true;
             }
 
             if (generator.isInitialSetupPending()) pending = true;
             if (pending && System.currentTimeMillis() - stableSince >= STABLE_DELAY_MILLIS) {
-                if (rebuild()) {
+                SourceHashCache.Snapshot current = capture();
+                boolean generatedMissing = !Files.exists(generator.generatedPackPath());
+                if (!generatedMissing
+                        && !generator.isInitialSetupPending()
+                        && current.aggregateHash().equals(appliedHash)) {
+                    saveCache(current);
+                    observed = fingerprint();
+                    pending = false;
+                    continue;
+                }
+                if (rebuild(current)) {
+                    appliedHash = current.aggregateHash();
                     observed = fingerprint();
                     pending = false;
                 } else {
@@ -73,9 +94,21 @@ final class GenerationCoordinator {
         }
     }
 
-    private boolean rebuild() {
+    private SourceHashCache.Snapshot capture() {
+        try {
+            return sourceCache.capture();
+        } catch (Throwable exception) {
+            System.err.println("[TChineseB] 無法計算來源 hash，將重新掃描以確保翻譯正確");
+            exception.printStackTrace();
+            return new SourceHashCache.Snapshot(
+                    "capture-error:" + System.nanoTime(), java.util.Map.of());
+        }
+    }
+
+    private boolean rebuild(SourceHashCache.Snapshot snapshot) {
         try {
             GeneratedPackGenerator.Result result = generator.generate();
+            saveCache(snapshot);
             System.out.printf("[TChineseB] 已更新 %s，掃描 %d 個來源、產生 %d 個語系檔。%n",
                     result.packFile(), result.sourcesRead(), result.filesWritten());
             if (result.packEnabled()) {
@@ -87,6 +120,15 @@ final class GenerationCoordinator {
             System.err.println("[TChineseB] 無法更新繁體中文資源包，稍後會重試");
             exception.printStackTrace();
             return false;
+        }
+    }
+
+    private void saveCache(SourceHashCache.Snapshot snapshot) {
+        try {
+            sourceCache.save(snapshot);
+        } catch (IOException exception) {
+            System.err.println("[TChineseB] 無法儲存來源 hash 快取，下次啟動將重新掃描");
+            exception.printStackTrace();
         }
     }
 
