@@ -36,6 +36,7 @@ dependencies {
 
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 	implementation "com.github.houbb:opencc4j:1.8.1"
+	include "com.github.houbb:opencc4j:1.8.1"
 }
 
 processResources {
