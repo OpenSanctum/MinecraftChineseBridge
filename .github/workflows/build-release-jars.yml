@@ -203,4 +203,11 @@ jobs:
                   subprocess.check_call(['gh', 'release', 'delete-asset', release_tag, name, '--yes'])
           PY
 
-          gh release upload "$release_tag" dist/*.jar --clobber
+          shopt -s nullglob
+          jar_files=(dist/*.jar)
+          if [ ${#jar_files[@]} -eq 0 ]; then
+            echo "No jar files were found in dist/ to upload" >&2
+            exit 1
+          fi
+
+          gh release upload "$release_tag" "${jar_files[@]}" --clobber
