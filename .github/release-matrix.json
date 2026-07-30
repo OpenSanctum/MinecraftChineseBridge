@@ -1,29 +1,9 @@
 {
-  "filename": "TChineseB-{loader}-{minecraft}-{program}.jar",
-  "series": [
-    {
-      "release": "1.20.x",
-      "minecraft": ["1.20.1", "1.20.2", "1.20.3", "1.20.4", "1.20.5", "1.20.6"]
-    },
-    {
-      "release": "1.21.x",
-      "minecraft": ["1.21", "1.21.1", "1.21.2", "1.21.3", "1.21.4", "1.21.5", "1.21.6", "1.21.7", "1.21.8", "1.21.9", "1.21.10", "1.21.11"]
-    },
-    {
-      "release": "26.1.x",
-      "minecraft": ["26.1", "26.1.1", "26.1.2"]
-    },
-    {
-      "release": "26.2.x",
-      "minecraft": ["26.2"]
-    }
-  ],
-  "program_versions": {
-    "1.20.1": "003",
-    "default": "001"
-  },
-  "missing_loaders": {
-    "1.20.5": ["forge"],
-    "1.21.2": ["forge"]
-  }
+  "filename": "TChineseB-{loader}-{series}-{program}.jar",
+  "releases": [
+    {"series":"1.20.x","program":"003","loaders":["fabric","forge","neoforge"],"minecraft_range":"1.20.1-1.20.6"},
+    {"series":"1.21.x","program":"001","loaders":["fabric","forge","neoforge"],"minecraft_range":"1.21-1.21.11"},
+    {"series":"26.1.x","program":"001","loaders":["fabric","forge","neoforge"],"minecraft_range":"26.1-26.1.2"},
+    {"series":"26.2.x","program":"001","loaders":["fabric","forge","neoforge"],"minecraft_range":"26.2"}
+  ]
 }
