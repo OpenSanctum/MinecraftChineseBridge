@@ -8,6 +8,7 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.stream.JsonWriter;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
@@ -88,6 +89,7 @@ final class GeneratedPackGenerator {
         deleteTree(staging);
         Files.createDirectories(staging);
         Files.writeString(staging.resolve("pack.mcmeta"), packMetadata(), StandardCharsets.UTF_8);
+        writePackIcon(staging.resolve("pack.png"));
 
         int written = 0;
         for (Map.Entry<String, JsonObject> entry : simplified.entrySet()) {
@@ -244,6 +246,13 @@ final class GeneratedPackGenerator {
         }
     }
 
+    private void writePackIcon(Path target) throws IOException {
+        try (InputStream icon = GeneratedPackGenerator.class.getResourceAsStream("/ChineseBridge-pack.png")) {
+            if (icon == null) throw new IOException("找不到內建資源包圖示 ChineseBridge-pack.png");
+            Files.copy(icon, target, StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+
     private String detectMinecraftVersion() {
         String override = System.getProperty("chinesebridge.minecraftVersion");
         if (override != null && !override.isBlank()) return override;
@@ -268,7 +277,7 @@ final class GeneratedPackGenerator {
                       "min_inclusive": 15,
                       "max_inclusive": 999
                     },
-                                        "description": "ChineseBridge 自動產生的繁體中文翻譯"
+                                                                                "description": "中文橋接模組資源包"
                   }
                 }
                 """;

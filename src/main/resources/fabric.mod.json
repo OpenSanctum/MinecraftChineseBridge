@@ -10,7 +10,7 @@
 	"contact": {
 		"sources": "https://github.com/OpenSanctum/MinecraftChineseBridge"
 	},
-	"license": "CC0-1.0",
+	"license": "MIT",
 	"environment": "client",
 	"entrypoints": {
 		"client": [

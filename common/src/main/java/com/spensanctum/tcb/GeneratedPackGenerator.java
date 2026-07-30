@@ -325,7 +325,7 @@ final class GeneratedPackGenerator {
                       "min_inclusive": 15,
                       "max_inclusive": 999
                     },
-                                        "description": "ChineseBridge 自動補充的中文語系"
+                                                                                "description": "中文橋接模組資源包"
                   }
                 }
                 """;
