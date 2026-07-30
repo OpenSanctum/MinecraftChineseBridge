@@ -29,7 +29,7 @@ import java.util.zip.ZipOutputStream;
 
 /**
  * Reads language files directly from installed mod/resource-pack jars and folders.
- * A namespace is omitted whenever a native zh_tw.json is present in any scanned source.
+ * A source namespace is omitted only when that same source already supplies zh_tw.json.
  */
 final class GeneratedPackGenerator {
     static final String PACK_DIRECTORY = "ZH-TW Auto Pack";
@@ -44,11 +44,18 @@ final class GeneratedPackGenerator {
 
     Result generate() throws IOException {
         Map<String, JsonObject> simplified = new HashMap<>();
-        Set<String> nativeTraditional = new HashSet<>();
         int[] sources = {0};
         for (Path source : discoverSources()) {
             try {
-                scan(source, simplified, nativeTraditional);
+                Map<String, JsonObject> sourceSimplified = new HashMap<>();
+                Set<String> sourceTraditional = new HashSet<>();
+                scan(source, sourceSimplified, sourceTraditional);
+                sourceSimplified.forEach((namespace, translations) -> {
+                    if (!sourceTraditional.contains(namespace)) {
+                        JsonObject merged = simplified.computeIfAbsent(namespace, ignored -> new JsonObject());
+                        translations.entrySet().forEach(entry -> merged.add(entry.getKey(), entry.getValue()));
+                    }
+                });
                 sources[0]++;
             } catch (Exception ignored) {
                 // A corrupt/unreadable third-party archive must not prevent the game from starting.
@@ -56,17 +63,24 @@ final class GeneratedPackGenerator {
         }
 
         Path pack = gameDirectory.resolve("resourcepacks").resolve(PACK_DIRECTORY);
+        if (Files.exists(pack)) {
+            try (Stream<Path> oldFiles = Files.walk(pack)) {
+                for (Path old : oldFiles.sorted(Comparator.reverseOrder()).toList()) Files.delete(old);
+            }
+        }
         Files.createDirectories(pack);
         Files.writeString(pack.resolve("pack.mcmeta"), "{\n  \"pack\": {\n    \"pack_format\": 15,\n    \"description\": \"Auto-generated Traditional Chinese translations\"\n  }\n}\n", StandardCharsets.UTF_8);
         int written = 0;
         for (Map.Entry<String, JsonObject> entry : simplified.entrySet()) {
-            if (nativeTraditional.contains(entry.getKey())) continue;
             Path target = pack.resolve("assets").resolve(entry.getKey()).resolve("lang/zh_tw.json");
             Files.createDirectories(target.getParent());
             writeTraditional(entry.getValue(), target);
             written++;
         }
         zipPack(pack);
+        try (Stream<Path> staged = Files.walk(pack)) {
+            for (Path path : staged.sorted(Comparator.reverseOrder()).toList()) Files.delete(path);
+        }
         return new Result(written, sources[0]);
     }
 

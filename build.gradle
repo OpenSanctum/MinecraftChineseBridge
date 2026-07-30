@@ -37,6 +37,12 @@ dependencies {
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 	implementation "com.github.houbb:opencc4j:1.8.1"
 	include "com.github.houbb:opencc4j:1.8.1"
+	implementation "com.github.houbb:nlp-common:0.0.5"
+	include "com.github.houbb:nlp-common:0.0.5"
+	implementation "com.github.houbb:heaven:0.2.0"
+	include "com.github.houbb:heaven:0.2.0"
+	implementation "org.apiguardian:apiguardian-api:1.0.0"
+	include "org.apiguardian:apiguardian-api:1.0.0"
 }
 
 processResources {

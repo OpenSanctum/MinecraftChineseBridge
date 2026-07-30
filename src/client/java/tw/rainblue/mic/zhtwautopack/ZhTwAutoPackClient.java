@@ -16,11 +16,12 @@ public final class ZhTwAutoPackClient implements ClientModInitializer {
         try {
             GeneratedPackGenerator.Result result = new GeneratedPackGenerator(client.gameDirectory.toPath()).generate();
             String packId = "file/" + GeneratedPackGenerator.PACK_FILE;
+            client.options.resourcePacks.remove("file/" + GeneratedPackGenerator.PACK_DIRECTORY);
             if (!client.options.resourcePacks.contains(packId)) {
                 client.options.resourcePacks.add(packId);
-                client.options.save();
-                client.reloadResourcePacks();
             }
+            client.options.save();
+            client.reloadResourcePacks();
             LOGGER.info("ZH-TW Auto Pack: wrote {} language files from {} sources.", result.filesWritten(), result.sourcesRead());
         } catch (Exception exception) {
             LOGGER.error("Could not generate the ZH-TW resource pack", exception);
