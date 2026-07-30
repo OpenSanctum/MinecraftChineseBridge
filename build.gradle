@@ -9,6 +9,8 @@ base {
 	archivesName = "zhtw-autopack-fabric"
 }
 
+sourceSets.main.resources.srcDir "common/src/main/resources"
+
 repositories {
 	// Add repositories to retrieve artifacts from in here.
 	// You should only use this when depending on other mods because

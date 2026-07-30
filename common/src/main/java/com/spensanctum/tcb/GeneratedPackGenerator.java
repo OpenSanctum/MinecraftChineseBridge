@@ -8,6 +8,7 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.stream.JsonWriter;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
@@ -76,6 +77,7 @@ final class GeneratedPackGenerator {
         deleteTree(staging);
         Files.createDirectories(staging);
         Files.writeString(staging.resolve("pack.mcmeta"), packMetadata(), StandardCharsets.UTF_8);
+        writePackIcon(staging.resolve("pack.png"));
 
         int written = 0;
         for (Map.Entry<String, JsonObject> entry : simplified.entrySet()) {
@@ -247,6 +249,13 @@ final class GeneratedPackGenerator {
              JsonWriter writer = new JsonWriter(raw)) {
             writer.setIndent("  ");
             com.google.gson.internal.Streams.write(translated, writer);
+        }
+    }
+
+    private void writePackIcon(Path target) throws IOException {
+        try (InputStream icon = GeneratedPackGenerator.class.getResourceAsStream("/tchineseb-pack.png")) {
+            if (icon == null) throw new IOException("找不到內建資源包圖示 tchineseb-pack.png");
+            Files.copy(icon, target, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 
