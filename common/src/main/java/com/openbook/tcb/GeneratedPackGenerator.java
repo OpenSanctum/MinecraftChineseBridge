@@ -1,4 +1,4 @@
-package com.openbook.tcb;
+﻿package com.openbook.tcb;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -33,7 +34,7 @@ import java.util.zip.ZipOutputStream;
 
 final class GeneratedPackGenerator {
     private static final Pattern RELEASE_JAR =
-            Pattern.compile("^TChineseB-(?:fabric|forge|neoforge)-(.+)-(?:\\d{3})\\.jar$");
+            Pattern.compile("^ChineseBridge-(?:fabric|forge|neoforge)-(.+)-(?:\\d{3})\\.jar$");
     private static final String CN_SUFFIX = "/lang/zh_cn.json";
     private static final String TW_SUFFIX = "/lang/zh_tw.json";
     private static final String OLD_PACK_ID = "file/ZH-TW Auto Pack";
@@ -41,15 +42,27 @@ final class GeneratedPackGenerator {
     private final String minecraftVersion;
     private final String packFile;
     private final TaiwaneseLocalizer localizer;
+    private final SourceHashCache sourceHashCache;
 
     GeneratedPackGenerator(Path gameDirectory) throws IOException {
         this.gameDirectory = gameDirectory;
         this.minecraftVersion = detectMinecraftVersion();
-        this.packFile = "TChineseB-" + minecraftVersion + ".zip";
+        this.packFile = "ChineseBridge-" + minecraftVersion + ".zip";
         this.localizer = new TaiwaneseLocalizer(gameDirectory);
+        this.sourceHashCache = new SourceHashCache(gameDirectory);
     }
 
     Result generateAndEnable() throws IOException {
+        SourceHashCache.Snapshot snapshot = null;
+        try {
+            snapshot = sourceHashCache.capture();
+            if (!sourceHashCache.contentChanged(snapshot) && Files.exists(generatedPackPath())) {
+                return new Result(0, 0, packFile);
+            }
+        } catch (Exception ignored) {
+            // If cache read/capture fails, continue with full generation to stay correct.
+        }
+
         Map<String, JsonObject> simplified = new HashMap<>();
         int sources = 0;
         for (Path source : discoverSources()) {
@@ -71,7 +84,7 @@ final class GeneratedPackGenerator {
 
         Path resourcePacks = gameDirectory.resolve("resourcepacks");
         Files.createDirectories(resourcePacks);
-        Path staging = resourcePacks.resolve(".tchineseb-staging");
+        Path staging = resourcePacks.resolve(".ChineseBridge-staging");
         deleteTree(staging);
         Files.createDirectories(staging);
         Files.writeString(staging.resolve("pack.mcmeta"), packMetadata(), StandardCharsets.UTF_8);
@@ -91,7 +104,18 @@ final class GeneratedPackGenerator {
         Files.move(temporaryZip, finalZip, StandardCopyOption.REPLACE_EXISTING);
         deleteTree(staging);
         enableInOptions();
+        if (snapshot != null) {
+            try {
+                sourceHashCache.save(snapshot);
+            } catch (Exception ignored) {
+                // Cache save failure should not fail startup.
+            }
+        }
         return new Result(written, sources, packFile);
+    }
+
+    private Path generatedPackPath() {
+        return gameDirectory.resolve("resourcepacks").resolve(packFile);
     }
 
     private List<Path> discoverSources() throws IOException {
@@ -99,14 +123,20 @@ final class GeneratedPackGenerator {
         for (String directory : List.of("mods", "resourcepacks")) {
             Path root = gameDirectory.resolve(directory);
             if (!Files.isDirectory(root)) continue;
-            try (Stream<Path> paths = Files.walk(root, 3)) {
-                paths.filter(path -> Files.isDirectory(path)
-                                || path.toString().endsWith(".jar")
-                                || path.toString().endsWith(".zip"))
+            try (DirectoryStream<Path> directChildren = Files.newDirectoryStream(root)) {
+                for (Path child : directChildren) {
+                    if (!Files.isDirectory(child)) continue;
+                    String name = child.getFileName().toString();
+                    if (name.equals(".ChineseBridge-staging")) continue;
+                    results.add(child);
+                }
+            }
+            try (Stream<Path> paths = Files.walk(root, 4)) {
+                paths.filter(Files::isRegularFile)
                         .filter(path -> {
                             String name = path.getFileName().toString();
-                            return !name.equals(".tchineseb-staging")
-                                    && !(name.startsWith("TChineseB-") && name.endsWith(".zip"));
+                            return (name.endsWith(".jar") || name.endsWith(".zip"))
+                                    && !(name.startsWith("ChineseBridge-") && name.endsWith(".zip"));
                         })
                         .forEach(results::add);
             }
@@ -170,7 +200,7 @@ final class GeneratedPackGenerator {
             JsonArray updated = new JsonArray();
             for (JsonElement element : packs) {
                 String id = element.getAsString();
-                if (!id.equals(OLD_PACK_ID) && !id.startsWith("file/TChineseB-")) updated.add(id);
+                if (!id.equals(OLD_PACK_ID) && !id.startsWith("file/ChineseBridge-")) updated.add(id);
             }
             updated.add(wanted);
             lines.set(index, "resourcePacks:" + updated);
@@ -215,7 +245,7 @@ final class GeneratedPackGenerator {
     }
 
     private String detectMinecraftVersion() {
-        String override = System.getProperty("tchineseb.minecraftVersion");
+        String override = System.getProperty("chinesebridge.minecraftVersion");
         if (override != null && !override.isBlank()) return override;
         try {
             CodeSource source = GeneratedPackGenerator.class.getProtectionDomain().getCodeSource();
@@ -238,7 +268,7 @@ final class GeneratedPackGenerator {
                       "min_inclusive": 15,
                       "max_inclusive": 999
                     },
-                    "description": "TChineseB 自動產生的繁體中文翻譯"
+                                        "description": "ChineseBridge 自動產生的繁體中文翻譯"
                   }
                 }
                 """;

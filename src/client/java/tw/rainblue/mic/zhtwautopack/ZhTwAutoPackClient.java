@@ -1,9 +1,12 @@
-package tw.rainblue.mic.zhtwautopack;
+﻿package tw.rainblue.mic.zhtwautopack;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.minecraft.client.Minecraft;
+import net.minecraft.server.packs.repository.PackRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
 
 /** Client entry point. The generated pack is persistent, so it also survives launcher restarts. */
 public final class ZhTwAutoPackClient implements ClientModInitializer {
@@ -13,18 +16,22 @@ public final class ZhTwAutoPackClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         Minecraft client = Minecraft.getInstance();
-        try {
-            GeneratedPackGenerator.Result result = new GeneratedPackGenerator(client.gameDirectory.toPath()).generate();
-            String packId = "file/" + GeneratedPackGenerator.PACK_FILE;
-            client.options.resourcePacks.remove("file/" + GeneratedPackGenerator.PACK_DIRECTORY);
-            if (!client.options.resourcePacks.contains(packId)) {
-                client.options.resourcePacks.add(packId);
+        GenerationCoordinator.start(client.gameDirectory.toPath(), result -> {
+            if (client != null) {
+                client.execute(() -> reload(client, result.packId()));
             }
-            client.options.save();
-            client.reloadResourcePacks();
-            LOGGER.info("ZH-TW Auto Pack: wrote {} language files from {} sources.", result.filesWritten(), result.sourcesRead());
-        } catch (Exception exception) {
-            LOGGER.error("Could not generate the ZH-TW resource pack", exception);
-        }
+            LOGGER.info("ZH-TW Auto Pack: wrote {} language files from {} sources.",
+                    result.filesWritten(), result.sourcesRead());
+        }, exception -> LOGGER.error("Could not generate the ZH-TW resource pack", exception));
+    }
+
+    private void reload(Minecraft client, String packId) {
+        PackRepository packs = client.getResourcePackRepository();
+        ArrayList<String> selected = new ArrayList<>(packs.getSelectedIds());
+        packs.reload();
+        selected.removeIf(id -> id.startsWith("file/ChineseBridge-"));
+        selected.add(packId);
+        packs.setSelected(selected);
+        client.reloadResourcePacks();
     }
 }

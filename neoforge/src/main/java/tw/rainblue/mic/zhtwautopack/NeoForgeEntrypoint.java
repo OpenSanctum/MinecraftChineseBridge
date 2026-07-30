@@ -1,4 +1,4 @@
-package tw.rainblue.mic.zhtwautopack;
+﻿package tw.rainblue.mic.zhtwautopack;
 
 import net.neoforged.fml.common.Mod;
 
@@ -13,10 +13,10 @@ public final class NeoForgeEntrypoint {
         try {
             GeneratedPackGenerator.Result result =
                     new GeneratedPackGenerator(Path.of(System.getProperty("user.dir"))).generateAndEnable();
-            System.out.printf("[TChineseB] 已產生 %s，共 %d 個語系檔。%n",
+            System.out.printf("[ChineseBridge] 已產生 %s，共 %d 個語系檔。%n",
                     result.packFile(), result.filesWritten());
         } catch (Exception exception) {
-            System.err.println("[TChineseB] 無法產生繁體中文資源包");
+            System.err.println("[ChineseBridge] 無法產生繁體中文資源包");
             exception.printStackTrace();
         }
     }

@@ -1,4 +1,4 @@
-package com.spensanctum.tcb;
+﻿package com.spensanctum.tcb;
 
 import com.github.houbb.opencc4j.util.ZhConverterUtil;
 import com.github.houbb.opencc4j.util.ZhTwConverterUtil;
@@ -316,7 +316,7 @@ final class TaiwaneseLocalizer {
     }
 
     private Map<String, String> loadUserTerms(Path gameDirectory) throws IOException {
-        Path config = gameDirectory.resolve("config").resolve("tchineseb-terms.json");
+        Path config = gameDirectory.resolve("config").resolve("ChineseBridge-terms.json");
         Files.createDirectories(config.getParent());
         if (!Files.exists(config)) writeDefaultConfig(config);
         Map<String, String> result = new LinkedHashMap<>();
@@ -332,7 +332,7 @@ final class TaiwaneseLocalizer {
                 }
             }
         } catch (Exception exception) {
-            System.err.println("[TChineseB] 無法讀取自訂詞彙表，將使用內建詞彙。");
+            System.err.println("[ChineseBridge] 無法讀取自訂詞彙表，將使用內建詞彙。");
         }
         return result;
     }

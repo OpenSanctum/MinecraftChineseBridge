@@ -1,4 +1,4 @@
-package com.spensanctum.tcb;
+﻿package com.spensanctum.tcb;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -35,7 +35,7 @@ final class GeneratedPackGenerator {
     private static final Pattern RELEASE_JAR =
         Pattern.compile("^ChineseBridge-(?:fabric|forge|neoforge)-(.+)-(?:\\d{3})\\.jar$");
     private static final String OLD_PACK_ID = "file/ZH-TW Auto Pack";
-    private static final String STATE_FILE = "tchineseb-state.json";
+    private static final String STATE_FILE = "ChineseBridge-state.json";
     private final Path gameDirectory;
     private final String minecraftVersion;
     private final String packFile;
@@ -104,9 +104,7 @@ final class GeneratedPackGenerator {
                                 || path.toString().endsWith(".zip"))
                         .filter(path -> {
                             String name = path.getFileName().toString();
-                            return !name.equals(".tchineseb-staging")
-                                    && !name.equals(".ChineseBridge-staging")
-                                    && !(name.startsWith("TChineseB-") && name.endsWith(".zip"))
+                            return !name.equals(".ChineseBridge-staging")
                                     && !(name.startsWith("ChineseBridge-") && name.endsWith(".zip"));
                         })
                         .forEach(results::add);
@@ -190,7 +188,6 @@ final class GeneratedPackGenerator {
             for (JsonElement element : packs) {
                 String id = element.getAsString();
                 if (!id.equals(OLD_PACK_ID)
-                        && !id.startsWith("file/TChineseB-")
                         && !id.startsWith("file/ChineseBridge-")) updated.add(id);
             }
             updated.add(wanted);
@@ -305,7 +302,7 @@ final class GeneratedPackGenerator {
     }
 
     private String detectMinecraftVersion() {
-        String override = System.getProperty("tchineseb.minecraftVersion");
+        String override = System.getProperty("chinesebridge.minecraftVersion");
         if (override != null && !override.isBlank()) return override;
         try {
             CodeSource source = GeneratedPackGenerator.class.getProtectionDomain().getCodeSource();

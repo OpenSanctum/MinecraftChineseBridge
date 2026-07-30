@@ -1,4 +1,4 @@
-package tw.rainblue.mic.zhtwautopack;
+﻿package tw.rainblue.mic.zhtwautopack;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -33,7 +33,7 @@ import java.util.zip.ZipOutputStream;
  */
 final class GeneratedPackGenerator {
     static final String PACK_DIRECTORY = "ZH-TW Auto Pack";
-    static final String PACK_FILE = "TChineseB-1.20.1.zip";
+    static final String PACK_FILE = "ChineseBridge-1.20.1.zip";
     private static final String CN_SUFFIX = "/lang/zh_cn.json";
     private static final String TW_SUFFIX = "/lang/zh_tw.json";
     private final Path gameDirectory;

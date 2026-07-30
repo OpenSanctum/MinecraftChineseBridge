@@ -1,4 +1,4 @@
-package com.spensanctum.tcb;
+﻿package com.spensanctum.tcb;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -38,11 +38,11 @@ final class GenerationCoordinator {
             try {
                 new GenerationCoordinator(gameDirectory, reloadResources).monitor();
             } catch (Throwable exception) {
-                System.err.println("[TChineseB] 無法啟動翻譯監控");
+                System.err.println("[ChineseBridge] 無法啟動翻譯監控");
                 exception.printStackTrace();
                 STARTED.set(false);
             }
-        }, "TChineseB translation monitor");
+        }, "ChineseBridge translation monitor");
         monitor.setDaemon(true);
         monitor.start();
     }
@@ -56,7 +56,7 @@ final class GenerationCoordinator {
                 || generator.isInitialSetupPending()) {
             if (!rebuild(initial)) appliedHash = "";
         } else {
-            System.out.println("[TChineseB] 模組與資源包內容未變，略過翻譯與資源重新載入。");
+            System.out.println("[ChineseBridge] 模組與資源包內容未變，略過翻譯與資源重新載入。");
         }
 
         String observed = fingerprint();
@@ -98,7 +98,7 @@ final class GenerationCoordinator {
         try {
             return sourceCache.capture();
         } catch (Throwable exception) {
-            System.err.println("[TChineseB] 無法計算來源 hash，將重新掃描以確保翻譯正確");
+            System.err.println("[ChineseBridge] 無法計算來源 hash，將重新掃描以確保翻譯正確");
             exception.printStackTrace();
             return new SourceHashCache.Snapshot(
                     "capture-error:" + System.nanoTime(), java.util.Map.of());
@@ -109,7 +109,7 @@ final class GenerationCoordinator {
         try {
             GeneratedPackGenerator.Result result = generator.generate();
             saveCache(snapshot);
-            System.out.printf("[TChineseB] 已更新 %s，掃描 %d 個來源、產生 %d 個語系檔。%n",
+            System.out.printf("[ChineseBridge] 已更新 %s，掃描 %d 個來源、產生 %d 個語系檔。%n",
                     result.packFile(), result.sourcesRead(), result.filesWritten());
             if (result.packEnabled()) {
                 reloadResources.accept(new ReloadRequest(
@@ -117,7 +117,7 @@ final class GenerationCoordinator {
             }
             return true;
         } catch (Throwable exception) {
-            System.err.println("[TChineseB] 無法更新中文語系資源包，稍後會重試");
+            System.err.println("[ChineseBridge] 無法更新中文語系資源包，稍後會重試");
             exception.printStackTrace();
             return false;
         }
@@ -127,7 +127,7 @@ final class GenerationCoordinator {
         try {
             sourceCache.save(snapshot);
         } catch (IOException exception) {
-            System.err.println("[TChineseB] 無法儲存來源 hash 快取，下次啟動將重新掃描");
+            System.err.println("[ChineseBridge] 無法儲存來源 hash 快取，下次啟動將重新掃描");
             exception.printStackTrace();
         }
     }
@@ -160,8 +160,8 @@ final class GenerationCoordinator {
 
     private boolean isTrackedSource(Path path) {
         String name = path.getFileName().toString();
-        if (name.equals(".tchineseb-staging") || name.equals(".ChineseBridge-staging") || name.endsWith(".tmp")) return false;
-        if ((name.startsWith("TChineseB-") || name.startsWith("ChineseBridge-")) && name.endsWith(".zip")) return false;
+        if (name.equals(".ChineseBridge-staging") || name.endsWith(".tmp")) return false;
+        if (name.startsWith("ChineseBridge-") && name.endsWith(".zip")) return false;
         return Files.isRegularFile(path)
                 && (name.endsWith(".jar")
                 || name.endsWith(".zip")

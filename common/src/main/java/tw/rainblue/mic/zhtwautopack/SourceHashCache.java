@@ -1,4 +1,4 @@
-﻿package com.spensanctum.tcb;
+﻿package tw.rainblue.mic.zhtwautopack;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -24,8 +24,8 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 final class SourceHashCache {
-    private static final int FORMAT_VERSION = 2;
-    private static final String CACHE_FILE = "ChineseBridge-cache.json";
+    private static final int FORMAT_VERSION = 1;
+    private static final String CACHE_FILE = "ChineseBridge-source-cache.json";
 
     private final Path gameDirectory;
     private final Path cacheFile;
@@ -42,8 +42,7 @@ final class SourceHashCache {
         Map<String, FileHash> hashes = new LinkedHashMap<>();
         for (Path file : files) {
             String relative = normalize(gameDirectory.relativize(file));
-            BasicFileAttributes attributes =
-                    Files.readAttributes(file, BasicFileAttributes.class);
+            BasicFileAttributes attributes = Files.readAttributes(file, BasicFileAttributes.class);
             FileHash previous = stored.files().get(relative);
             String sha256 = previous != null
                     && previous.size() == attributes.size()
@@ -98,8 +97,7 @@ final class SourceHashCache {
             JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
             if (root.get("formatVersion").getAsInt() != FORMAT_VERSION) return Snapshot.empty();
             Map<String, FileHash> files = new LinkedHashMap<>();
-            for (Map.Entry<String, JsonElement> entry :
-                    root.getAsJsonObject("files").entrySet()) {
+            for (Map.Entry<String, JsonElement> entry : root.getAsJsonObject("files").entrySet()) {
                 JsonObject value = entry.getValue().getAsJsonObject();
                 files.put(entry.getKey(), new FileHash(
                         value.get("size").getAsLong(),
@@ -163,7 +161,7 @@ final class SourceHashCache {
     record FileHash(long size, long modified, String sha256) { }
 
     record Snapshot(String aggregateHash, Map<String, FileHash> files) {
-        private static Snapshot empty() {
+        static Snapshot empty() {
             return new Snapshot("", Map.of());
         }
     }

@@ -1,4 +1,4 @@
-package tw.rainblue.mic.zhtwautopack;
+﻿package tw.rainblue.mic.zhtwautopack;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -13,6 +13,7 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -33,13 +34,17 @@ import java.util.zip.ZipOutputStream;
  */
 final class GeneratedPackGenerator {
     static final String PACK_DIRECTORY = "ZH-TW Auto Pack";
-    static final String PACK_FILE = "TChineseB-1.20.1.zip";
+    static final String PACK_FILE = "ChineseBridge-1.20.1.zip";
     private static final String CN_SUFFIX = "/lang/zh_cn.json";
     private static final String TW_SUFFIX = "/lang/zh_tw.json";
     private final Path gameDirectory;
 
     GeneratedPackGenerator(Path gameDirectory) {
         this.gameDirectory = gameDirectory;
+    }
+
+    Path generatedPackPath() {
+        return gameDirectory.resolve("resourcepacks").resolve(PACK_FILE);
     }
 
     Result generate() throws IOException {
@@ -100,9 +105,22 @@ final class GeneratedPackGenerator {
         for (String directory : List.of("mods", "resourcepacks")) {
             Path root = gameDirectory.resolve(directory);
             if (!Files.isDirectory(root)) continue;
-            try (Stream<Path> paths = Files.walk(root, 3)) {
-                paths.filter(path -> Files.isDirectory(path) || path.toString().endsWith(".jar") || path.toString().endsWith(".zip"))
-                        .filter(path -> !path.getFileName().toString().equals(PACK_DIRECTORY) && !path.getFileName().toString().equals(PACK_FILE))
+            try (DirectoryStream<Path> directChildren = Files.newDirectoryStream(root)) {
+                for (Path child : directChildren) {
+                    String name = child.getFileName().toString();
+                    if (name.equals(PACK_DIRECTORY) || name.equals(PACK_FILE)) continue;
+                    if (Files.isDirectory(child)) {
+                        results.add(child);
+                    }
+                }
+            }
+            try (Stream<Path> paths = Files.walk(root, 4)) {
+                paths.filter(Files::isRegularFile)
+                        .filter(path -> {
+                            String name = path.getFileName().toString();
+                            return name.endsWith(".jar") || name.endsWith(".zip");
+                        })
+                        .filter(path -> !path.getFileName().toString().equals(PACK_FILE))
                         .forEach(results::add);
             }
         }

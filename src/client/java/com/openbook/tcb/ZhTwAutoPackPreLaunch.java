@@ -1,4 +1,4 @@
-package com.openbook.tcb;
+﻿package com.openbook.tcb;
 
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.entrypoint.PreLaunchEntrypoint;
@@ -9,10 +9,10 @@ public final class ZhTwAutoPackPreLaunch implements PreLaunchEntrypoint {
         try {
             GeneratedPackGenerator.Result result =
                     new GeneratedPackGenerator(FabricLoader.getInstance().getGameDir()).generateAndEnable();
-            System.out.printf("[TChineseB] 已產生 %s，共 %d 個語系檔。%n",
+            System.out.printf("[ChineseBridge] 已產生 %s，共 %d 個語系檔。%n",
                     result.packFile(), result.filesWritten());
         } catch (Exception exception) {
-            System.err.println("[TChineseB] 無法產生繁體中文資源包");
+            System.err.println("[ChineseBridge] 無法產生繁體中文資源包");
             exception.printStackTrace();
         }
     }
