@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 final class SourceHashCache {
-    private static final int FORMAT_VERSION = 1;
+    private static final int FORMAT_VERSION = 2;
     private static final String CACHE_FILE = "tchineseb-cache.json";
 
     private final Path gameDirectory;
@@ -135,7 +135,8 @@ final class SourceHashCache {
         return name.endsWith(".jar")
                 || name.endsWith(".zip")
                 || name.equals("zh_cn.json")
-                || name.equals("zh_tw.json");
+                || name.equals("zh_tw.json")
+                || name.equals("zh_hk.json");
     }
 
     private static String hash(Path file) throws Exception {

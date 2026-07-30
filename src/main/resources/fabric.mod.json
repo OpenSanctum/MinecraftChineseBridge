@@ -2,13 +2,13 @@
 	"schemaVersion": 1,
 	"id": "zhtw_autopack",
 	"version": "${version}",
-	"name": "Traditional Chinese Bridge",
-	"description": "Automatically creates a Traditional Chinese language resource pack from Simplified Chinese language files.",
+	"name": "Minecraft Chinese Bridge",
+	"description": "Automatically fills missing Simplified Chinese, Traditional Chinese (Taiwan), and Traditional Chinese (Hong Kong) language resources.",
 	"authors": [
 		"OpenSanctum"
 	],
 	"contact": {
-		"sources": "https://github.com/OpenSanctum/Minecraft-TCB"
+		"sources": "https://github.com/OpenSanctum/MinecraftChineseBridge"
 	},
 	"license": "CC0-1.0",
 	"environment": "client",

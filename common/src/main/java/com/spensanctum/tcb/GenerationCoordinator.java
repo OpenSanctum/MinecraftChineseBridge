@@ -117,7 +117,7 @@ final class GenerationCoordinator {
             }
             return true;
         } catch (Throwable exception) {
-            System.err.println("[TChineseB] 無法更新繁體中文資源包，稍後會重試");
+            System.err.println("[TChineseB] 無法更新中文語系資源包，稍後會重試");
             exception.printStackTrace();
             return false;
         }
@@ -166,7 +166,8 @@ final class GenerationCoordinator {
                 && (name.endsWith(".jar")
                 || name.endsWith(".zip")
                 || name.equals("zh_cn.json")
-                || name.equals("zh_tw.json"));
+                || name.equals("zh_tw.json")
+                || name.equals("zh_hk.json"));
     }
 
     private static void update(MessageDigest digest, String value) {

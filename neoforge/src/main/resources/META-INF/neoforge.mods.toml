@@ -4,10 +4,10 @@ license="CC0-1.0"
 
 [[mods]]
 modId="tchineseb"
-version="009"
-displayName="Traditional Chinese Bridge"
+version="010"
+displayName="Minecraft Chinese Bridge"
 authors="OpenSanctum"
-description='''自動將簡體中文語系轉換並整合成繁體中文資源包。'''
+description='''自動補齊簡體中文、中文（台灣）與中文（香港）缺少的語系資源。'''
 
 [[dependencies.tchineseb]]
 modId="neoforge"

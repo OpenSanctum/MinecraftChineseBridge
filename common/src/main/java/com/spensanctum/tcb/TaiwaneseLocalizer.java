@@ -1,5 +1,6 @@
 package com.spensanctum.tcb;
 
+import com.github.houbb.opencc4j.util.ZhConverterUtil;
 import com.github.houbb.opencc4j.util.ZhTwConverterUtil;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -263,6 +264,7 @@ final class TaiwaneseLocalizer {
     };
 
     private final List<Term> terms;
+    private final List<Term> reverseTerms;
 
     TaiwaneseLocalizer(Path gameDirectory) throws IOException {
         Map<String, String> merged = new LinkedHashMap<>();
@@ -270,8 +272,12 @@ final class TaiwaneseLocalizer {
         merged.putAll(loadUserTerms(gameDirectory));
         terms = merged.entrySet().stream()
                 .map(entry -> new Term(entry.getKey(),
-                        ZhTwConverterUtil.toTraditional(entry.getKey()), entry.getValue()))
+                        ZhTwConverterUtil.toTraditional(entry.getKey()),
+                        ZhConverterUtil.toTraditional(entry.getKey()), entry.getValue()))
                 .sorted(Comparator.comparingInt((Term term) -> term.source().length()).reversed())
+                .toList();
+        reverseTerms = terms.stream()
+                .sorted(Comparator.comparingInt((Term term) -> term.target().length()).reversed())
                 .toList();
     }
 
@@ -284,7 +290,28 @@ final class TaiwaneseLocalizer {
         translated = ZhTwConverterUtil.toTraditional(translated);
         for (Term term : terms) {
             translated = translated.replace(term.traditionalSource(), term.target());
+            translated = translated.replace(term.hongKongSource(), term.target());
         }
+        return restore(translated, protectedText.values());
+    }
+
+    String toSimplified(String source) {
+        ProtectedText protectedText = protect(source);
+        String translated = protectedText.text();
+        for (Term term : reverseTerms) {
+            translated = translated.replace(term.target(), term.source());
+        }
+        translated = ZhTwConverterUtil.toSimple(translated);
+        return restore(translated, protectedText.values());
+    }
+
+    String toHongKong(String source) {
+        ProtectedText protectedText = protect(source);
+        String translated = protectedText.text();
+        for (Term term : reverseTerms) {
+            translated = translated.replace(term.target(), term.hongKongSource());
+        }
+        translated = ZhConverterUtil.toTraditional(translated);
         return restore(translated, protectedText.values());
     }
 
@@ -344,5 +371,6 @@ final class TaiwaneseLocalizer {
 
     private record ProtectedText(String text, List<String> values) { }
 
-    private record Term(String source, String traditionalSource, String target) { }
+    private record Term(String source, String traditionalSource,
+                        String hongKongSource, String target) { }
 }

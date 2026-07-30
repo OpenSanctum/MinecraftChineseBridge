@@ -21,11 +21,10 @@ import java.nio.file.StandardOpenOption;
 import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -35,8 +34,6 @@ import java.util.zip.ZipOutputStream;
 final class GeneratedPackGenerator {
     private static final Pattern RELEASE_JAR =
             Pattern.compile("^TChineseB-(?:fabric|forge|neoforge)-(.+)-(?:\\d{3})\\.jar$");
-    private static final String CN_SUFFIX = "/lang/zh_cn.json";
-    private static final String TW_SUFFIX = "/lang/zh_tw.json";
     private static final String OLD_PACK_ID = "file/ZH-TW Auto Pack";
     private static final String STATE_FILE = "tchineseb-state.json";
     private final Path gameDirectory;
@@ -52,19 +49,11 @@ final class GeneratedPackGenerator {
     }
 
     Result generate() throws IOException {
-        Map<String, JsonObject> simplified = new HashMap<>();
+        Map<String, EnumMap<ChineseLocale, JsonObject>> translations = new HashMap<>();
         int sources = 0;
         for (Path source : discoverSources()) {
             try {
-                Map<String, JsonObject> local = new HashMap<>();
-                Set<String> localTraditional = new HashSet<>();
-                scan(source, local, localTraditional);
-                local.forEach((namespace, translations) -> {
-                    if (!localTraditional.contains(namespace)) {
-                        JsonObject merged = simplified.computeIfAbsent(namespace, ignored -> new JsonObject());
-                        translations.entrySet().forEach(entry -> merged.add(entry.getKey(), entry.getValue()));
-                    }
-                });
+                scan(source, translations);
                 sources++;
             } catch (Exception ignored) {
                 // One broken third-party archive must not prevent Minecraft from starting.
@@ -80,11 +69,18 @@ final class GeneratedPackGenerator {
         writePackIcon(staging.resolve("pack.png"));
 
         int written = 0;
-        for (Map.Entry<String, JsonObject> entry : simplified.entrySet()) {
-            Path target = staging.resolve("assets").resolve(entry.getKey()).resolve("lang/zh_tw.json");
-            Files.createDirectories(target.getParent());
-            writeTraditional(entry.getValue(), target);
-            written++;
+        for (Map.Entry<String, EnumMap<ChineseLocale, JsonObject>> entry : translations.entrySet()) {
+            EnumMap<ChineseLocale, JsonObject> available = entry.getValue();
+            for (ChineseLocale targetLocale : ChineseLocale.values()) {
+                if (available.containsKey(targetLocale)) continue;
+                JsonObject source = sourceFor(targetLocale, available);
+                if (source == null) continue;
+                Path target = staging.resolve("assets").resolve(entry.getKey())
+                        .resolve("lang").resolve(targetLocale.fileName);
+                Files.createDirectories(target.getParent());
+                writeLocalized(source, target, targetLocale);
+                written++;
+            }
         }
 
         Path temporaryZip = resourcePacks.resolve(packFile + ".tmp");
@@ -117,19 +113,20 @@ final class GeneratedPackGenerator {
         return results;
     }
 
-    private void scan(Path source, Map<String, JsonObject> simplified,
-                      Set<String> nativeTraditional) throws IOException {
+    private void scan(Path source,
+                      Map<String, EnumMap<ChineseLocale, JsonObject>> translations) throws IOException {
         if (Files.isDirectory(source)) {
-            scanRoot(source, simplified, nativeTraditional);
+            scanRoot(source, translations);
             return;
         }
         try (FileSystem zip = FileSystems.newFileSystem(source, (ClassLoader) null)) {
-            scanRoot(zip.getPath("/"), simplified, nativeTraditional);
+            scanRoot(zip.getPath("/"), translations);
         }
     }
 
-    private void scanRoot(Path root, Map<String, JsonObject> simplified,
-                          Set<String> nativeTraditional) throws IOException {
+    private void scanRoot(Path root,
+                          Map<String, EnumMap<ChineseLocale, JsonObject>> translations)
+            throws IOException {
         Path assets = root.resolve("assets");
         if (!Files.isDirectory(assets)) return;
         try (Stream<Path> files = Files.walk(assets, 4)) {
@@ -138,12 +135,15 @@ final class GeneratedPackGenerator {
                 int separator = relative.indexOf('/');
                 if (separator < 1) continue;
                 String namespace = relative.substring(0, separator);
-                if (relative.endsWith(TW_SUFFIX)) nativeTraditional.add(namespace);
-                if (relative.endsWith(CN_SUFFIX)) {
+                ChineseLocale locale = ChineseLocale.fromPath(relative);
+                if (locale != null) {
                     try (Reader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
                         JsonElement parsed = JsonParser.parseReader(reader);
                         if (parsed.isJsonObject()) {
-                            JsonObject merged = simplified.computeIfAbsent(namespace, ignored -> new JsonObject());
+                            JsonObject merged = translations
+                                    .computeIfAbsent(namespace,
+                                            ignored -> new EnumMap<>(ChineseLocale.class))
+                                    .computeIfAbsent(locale, ignored -> new JsonObject());
                             parsed.getAsJsonObject().entrySet()
                                     .forEach(entry -> merged.add(entry.getKey(), entry.getValue()));
                         }
@@ -238,18 +238,41 @@ final class GeneratedPackGenerator {
         return false;
     }
 
-    private void writeTraditional(JsonObject source, Path target) throws IOException {
+    private JsonObject sourceFor(ChineseLocale target,
+                                 EnumMap<ChineseLocale, JsonObject> available) {
+        ChineseLocale[] preference = switch (target) {
+            case CN -> new ChineseLocale[]{ChineseLocale.TW, ChineseLocale.HK};
+            case TW -> new ChineseLocale[]{ChineseLocale.CN, ChineseLocale.HK};
+            case HK -> new ChineseLocale[]{ChineseLocale.TW, ChineseLocale.CN};
+        };
+        for (ChineseLocale locale : preference) {
+            JsonObject source = available.get(locale);
+            if (source != null) return source;
+        }
+        return null;
+    }
+
+    private void writeLocalized(JsonObject source, Path target, ChineseLocale locale)
+            throws IOException {
         JsonObject translated = new JsonObject();
         for (Map.Entry<String, JsonElement> entry : source.entrySet()) {
             JsonElement value = entry.getValue();
             translated.add(entry.getKey(), value.isJsonPrimitive() && value.getAsJsonPrimitive().isString()
-                    ? new JsonPrimitive(localizer.localize(value.getAsString())) : value);
+                    ? new JsonPrimitive(localize(value.getAsString(), locale)) : value);
         }
         try (Writer raw = Files.newBufferedWriter(target, StandardCharsets.UTF_8);
              JsonWriter writer = new JsonWriter(raw)) {
             writer.setIndent("  ");
             com.google.gson.internal.Streams.write(translated, writer);
         }
+    }
+
+    private String localize(String source, ChineseLocale locale) {
+        return switch (locale) {
+            case CN -> localizer.toSimplified(source);
+            case TW -> localizer.localize(source);
+            case HK -> localizer.toHongKong(source);
+        };
     }
 
     private void writePackIcon(Path target) throws IOException {
@@ -301,7 +324,7 @@ final class GeneratedPackGenerator {
                       "min_inclusive": 15,
                       "max_inclusive": 999
                     },
-                    "description": "TChineseB 自動產生的繁體中文翻譯"
+                    "description": "TChineseB 自動補充的中文語系"
                   }
                 }
                 """;
@@ -309,4 +332,23 @@ final class GeneratedPackGenerator {
 
     record Result(int filesWritten, int sourcesRead, String packFile,
                   boolean initialSetupPerformed, boolean packEnabled) { }
+
+    private enum ChineseLocale {
+        CN("zh_cn.json"),
+        TW("zh_tw.json"),
+        HK("zh_hk.json");
+
+        private final String fileName;
+
+        ChineseLocale(String fileName) {
+            this.fileName = fileName;
+        }
+
+        private static ChineseLocale fromPath(String path) {
+            for (ChineseLocale locale : values()) {
+                if (path.endsWith("/lang/" + locale.fileName)) return locale;
+            }
+            return null;
+        }
+    }
 }
