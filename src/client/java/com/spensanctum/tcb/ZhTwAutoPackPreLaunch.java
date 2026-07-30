@@ -8,7 +8,7 @@ public final class ZhTwAutoPackPreLaunch implements PreLaunchEntrypoint {
     public void onPreLaunch() {
         try {
             GeneratedPackGenerator.Result result =
-                    new GeneratedPackGenerator(FabricLoader.getInstance().getGameDir()).generateAndEnable();
+                    new GeneratedPackGenerator(FabricLoader.getInstance().getGameDir()).generate();
             System.out.printf("[ChineseBridge] 已產生 %s，共 %d 個語系檔。%n",
                     result.packFile(), result.filesWritten());
         } catch (Exception exception) {

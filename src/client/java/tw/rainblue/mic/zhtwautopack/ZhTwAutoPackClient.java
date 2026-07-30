@@ -16,13 +16,17 @@ public final class ZhTwAutoPackClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         Minecraft client = Minecraft.getInstance();
-        GenerationCoordinator.start(client.gameDirectory.toPath(), result -> {
+        try {
+            GeneratedPackGenerator.Result result =
+                    new GeneratedPackGenerator(client.gameDirectory.toPath()).generateAndEnable();
             if (client != null) {
-                client.execute(() -> reload(client, result.packId()));
+                reload(client, "file/" + result.packFile());
             }
             LOGGER.info("ZH-TW Auto Pack: wrote {} language files from {} sources.",
                     result.filesWritten(), result.sourcesRead());
-        }, exception -> LOGGER.error("Could not generate the ZH-TW resource pack", exception));
+        } catch (Exception exception) {
+            LOGGER.error("Could not generate the ZH-TW resource pack", exception);
+        }
     }
 
     private void reload(Minecraft client, String packId) {
