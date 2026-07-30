@@ -1,14 +1,14 @@
-package tw.rainblue.mic.zhtwautopack;
+package com.spensanctum.tcb;
 
-import net.neoforged.fml.common.Mod;
+import net.minecraftforge.fml.common.Mod;
 
 import java.nio.file.Path;
 
-@Mod(NeoForgeEntrypoint.MOD_ID)
-public final class NeoForgeEntrypoint {
+@Mod(ForgeEntrypoint.MOD_ID)
+public final class ForgeEntrypoint {
     static final String MOD_ID = "tchineseb";
 
-    public NeoForgeEntrypoint() {
+    public ForgeEntrypoint() {
         if (!isClient()) return;
         try {
             GeneratedPackGenerator.Result result =
@@ -22,12 +22,15 @@ public final class NeoForgeEntrypoint {
     }
 
     private boolean isClient() {
-        try {
-            Object dist = Class.forName("net.neoforged.fml.loading.FMLEnvironment")
-                    .getField("dist").get(null);
-            return "CLIENT".equals(String.valueOf(dist));
-        } catch (ReflectiveOperationException ignored) {
-            return true;
+        for (String environment : new String[]{
+                "net.minecraftforge.fml.loading.FMLEnvironment",
+                "net.neoforged.fml.loading.FMLEnvironment"}) {
+            try {
+                Object dist = Class.forName(environment).getField("dist").get(null);
+                return "CLIENT".equals(String.valueOf(dist));
+            } catch (ReflectiveOperationException ignored) {
+            }
         }
+        return true;
     }
 }

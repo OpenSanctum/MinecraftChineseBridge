@@ -1,4 +1,4 @@
-package tw.rainblue.mic.zhtwautopack;
+package com.spensanctum.tcb;
 
 import com.github.houbb.opencc4j.util.ZhTwConverterUtil;
 import com.google.gson.JsonElement;

@@ -1,4 +1,4 @@
-package tw.rainblue.mic.zhtwautopack;
+package com.spensanctum.tcb;
 
 import net.minecraftforge.fml.common.Mod;
 

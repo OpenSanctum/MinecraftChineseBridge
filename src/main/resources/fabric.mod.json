@@ -14,7 +14,7 @@
 	"environment": "client",
 	"entrypoints": {
 		"preLaunch": [
-			"tw.rainblue.mic.zhtwautopack.ZhTwAutoPackPreLaunch"
+			"com.spensanctum.tcb.ZhTwAutoPackPreLaunch"
 		]
 	},
 	"depends": {
