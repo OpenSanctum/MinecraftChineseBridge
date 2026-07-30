@@ -4,7 +4,7 @@ license="CC0-1.0"
 
 [[mods]]
 modId="tchineseb"
-version="002"
+version="005"
 displayName="Traditional Chinese Bridge"
 authors="RainBlueTW"
 description='''自動將簡體中文語系轉換並整合成繁體中文資源包。'''
