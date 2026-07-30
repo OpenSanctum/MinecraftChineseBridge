@@ -1,9 +1,45 @@
 {
   "filename": "ChineseBridge-{loader}-{series}-{program}.jar",
   "releases": [
-    {"series":"1.20.x","program":"012","loaders":["fabric","forge","neoforge"],"minecraft_range":"1.20.1-1.20.6"},
-    {"series":"1.21.x","program":"012","loaders":["fabric","forge","neoforge"],"minecraft_range":"1.21-1.21.11"},
-    {"series":"26.1.x","program":"012","loaders":["fabric","forge","neoforge"],"minecraft_range":"26.1-26.1.2"},
-    {"series":"26.2.x","program":"012","loaders":["fabric","forge","neoforge"],"minecraft_range":"26.2"}
+    {
+      "series": "1.20.x",
+      "program": "012",
+      "loaders": [
+        "fabric",
+        "forge",
+        "neoforge"
+      ],
+      "minecraft_range": "1.20.1-1.20.6"
+    },
+    {
+      "series": "1.21.x",
+      "program": "012",
+      "loaders": [
+        "fabric",
+        "forge",
+        "neoforge"
+      ],
+      "minecraft_range": "1.21-1.21.11"
+    },
+    {
+      "series": "26.1.x",
+      "program": "012",
+      "loaders": [
+        "fabric",
+        "forge",
+        "neoforge"
+      ],
+      "minecraft_range": "26.1-26.1.2"
+    },
+    {
+      "series": "26.2.x",
+      "program": "012",
+      "loaders": [
+        "fabric",
+        "forge",
+        "neoforge"
+      ],
+      "minecraft_range": "26.2"
+    }
   ]
 }
