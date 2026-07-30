@@ -13,8 +13,8 @@
 	"license": "CC0-1.0",
 	"environment": "client",
 	"entrypoints": {
-		"preLaunch": [
-			"com.spensanctum.tcb.ZhTwAutoPackPreLaunch"
+		"client": [
+			"com.spensanctum.tcb.FabricEntrypoint"
 		]
 	},
 	"depends": {

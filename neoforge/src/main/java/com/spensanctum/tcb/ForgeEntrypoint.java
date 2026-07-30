@@ -1,8 +1,11 @@
 package com.spensanctum.tcb;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.server.packs.repository.PackRepository;
 import net.minecraftforge.fml.common.Mod;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 
 @Mod(ForgeEntrypoint.MOD_ID)
 public final class ForgeEntrypoint {
@@ -10,15 +13,22 @@ public final class ForgeEntrypoint {
 
     public ForgeEntrypoint() {
         if (!isClient()) return;
-        try {
-            GeneratedPackGenerator.Result result =
-                    new GeneratedPackGenerator(Path.of(System.getProperty("user.dir"))).generateAndEnable();
-            System.out.printf("[TChineseB] 已產生 %s，共 %d 個語系檔。%n",
-                    result.packFile(), result.filesWritten());
-        } catch (Exception exception) {
-            System.err.println("[TChineseB] 無法產生繁體中文資源包");
-            exception.printStackTrace();
+        GenerationCoordinator.start(Path.of(System.getProperty("user.dir")), request -> {
+            Minecraft client = Minecraft.getInstance();
+            if (client != null) client.execute(() -> reload(client, request));
+        });
+    }
+
+    private void reload(Minecraft client, GenerationCoordinator.ReloadRequest request) {
+        PackRepository packs = client.getResourcePackRepository();
+        packs.reload();
+        if (request.selectAtHighestPriority()) {
+            ArrayList<String> selected = new ArrayList<>(packs.getSelectedIds());
+            selected.removeIf(id -> id.startsWith("file/TChineseB-"));
+            selected.add(request.packId());
+            packs.setSelected(selected);
         }
+        client.reloadResourcePacks();
     }
 
     private boolean isClient() {

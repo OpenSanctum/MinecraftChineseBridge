@@ -1,19 +1,16 @@
 package com.spensanctum.tcb;
 
+import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.packs.repository.PackRepository;
-import net.neoforged.fml.common.Mod;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 
-@Mod(NeoForgeEntrypoint.MOD_ID)
-public final class NeoForgeEntrypoint {
-    static final String MOD_ID = "tchineseb";
-
-    public NeoForgeEntrypoint() {
-        if (!isClient()) return;
-        GenerationCoordinator.start(Path.of(System.getProperty("user.dir")), request -> {
+public final class FabricEntrypoint implements ClientModInitializer {
+    @Override
+    public void onInitializeClient() {
+        GenerationCoordinator.start(FabricLoader.getInstance().getGameDir(), request -> {
             Minecraft client = Minecraft.getInstance();
             if (client != null) client.execute(() -> reload(client, request));
         });
@@ -29,15 +26,5 @@ public final class NeoForgeEntrypoint {
             packs.setSelected(selected);
         }
         client.reloadResourcePacks();
-    }
-
-    private boolean isClient() {
-        try {
-            Object dist = Class.forName("net.neoforged.fml.loading.FMLEnvironment")
-                    .getField("dist").get(null);
-            return "CLIENT".equals(String.valueOf(dist));
-        } catch (ReflectiveOperationException ignored) {
-            return true;
-        }
     }
 }

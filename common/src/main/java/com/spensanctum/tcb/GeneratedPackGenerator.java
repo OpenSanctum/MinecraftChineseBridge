@@ -37,6 +37,7 @@ final class GeneratedPackGenerator {
     private static final String CN_SUFFIX = "/lang/zh_cn.json";
     private static final String TW_SUFFIX = "/lang/zh_tw.json";
     private static final String OLD_PACK_ID = "file/ZH-TW Auto Pack";
+    private static final String STATE_FILE = "tchineseb-state.json";
     private final Path gameDirectory;
     private final String minecraftVersion;
     private final String packFile;
@@ -49,7 +50,7 @@ final class GeneratedPackGenerator {
         this.localizer = new TaiwaneseLocalizer(gameDirectory);
     }
 
-    Result generateAndEnable() throws IOException {
+    Result generate() throws IOException {
         Map<String, JsonObject> simplified = new HashMap<>();
         int sources = 0;
         for (Path source : discoverSources()) {
@@ -90,8 +91,8 @@ final class GeneratedPackGenerator {
         zip(staging, temporaryZip);
         Files.move(temporaryZip, finalZip, StandardCopyOption.REPLACE_EXISTING);
         deleteTree(staging);
-        enableInOptions();
-        return new Result(written, sources, packFile);
+        boolean initialSetupPerformed = enableOnFirstRun();
+        return new Result(written, sources, packFile, initialSetupPerformed, isPackEnabled());
     }
 
     private List<Path> discoverSources() throws IOException {
@@ -152,12 +153,16 @@ final class GeneratedPackGenerator {
         }
     }
 
-    private void enableInOptions() throws IOException {
+    private boolean enableOnFirstRun() throws IOException {
+        Path state = gameDirectory.resolve("config").resolve(STATE_FILE);
+        if (Files.exists(state)) return false;
+
         Path options = gameDirectory.resolve("options.txt");
-        if (!Files.exists(options)) return;
+        if (!Files.exists(options)) return false;
         List<String> lines = Files.readAllLines(options, StandardCharsets.UTF_8);
         String wanted = "file/" + packFile;
         boolean found = false;
+        boolean alreadyEnabled = false;
         for (int index = 0; index < lines.size(); index++) {
             String line = lines.get(index);
             if (!line.startsWith("resourcePacks:")) continue;
@@ -166,6 +171,16 @@ final class GeneratedPackGenerator {
                 packs = JsonParser.parseString(line.substring("resourcePacks:".length())).getAsJsonArray();
             } catch (Exception ignored) {
                 packs = new JsonArray();
+            }
+            for (JsonElement element : packs) {
+                if (wanted.equals(element.getAsString())) {
+                    alreadyEnabled = true;
+                    break;
+                }
+            }
+            if (alreadyEnabled) {
+                found = true;
+                break;
             }
             JsonArray updated = new JsonArray();
             for (JsonElement element : packs) {
@@ -177,9 +192,48 @@ final class GeneratedPackGenerator {
             found = true;
             break;
         }
-        if (!found) lines.add("resourcePacks:[\"" + wanted + "\"]");
-        Files.write(options, lines, StandardCharsets.UTF_8,
-                StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
+        if (!alreadyEnabled) {
+            if (!found) lines.add("resourcePacks:[\"" + wanted + "\"]");
+            Files.write(options, lines, StandardCharsets.UTF_8,
+                    StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
+        }
+        Files.createDirectories(state.getParent());
+        Path temporaryState = state.resolveSibling(STATE_FILE + ".tmp");
+        Files.writeString(temporaryState, """
+                {
+                  "initialResourcePackSetupCompleted": true
+                }
+                """, StandardCharsets.UTF_8);
+        Files.move(temporaryState, state, StandardCopyOption.REPLACE_EXISTING);
+        return !alreadyEnabled;
+    }
+
+    boolean isInitialSetupPending() {
+        return !Files.exists(gameDirectory.resolve("config").resolve(STATE_FILE))
+                && Files.exists(gameDirectory.resolve("options.txt"));
+    }
+
+    Path generatedPackPath() {
+        return gameDirectory.resolve("resourcepacks").resolve(packFile);
+    }
+
+    private boolean isPackEnabled() {
+        Path options = gameDirectory.resolve("options.txt");
+        if (!Files.exists(options)) return false;
+        String wanted = "file/" + packFile;
+        try {
+            for (String line : Files.readAllLines(options, StandardCharsets.UTF_8)) {
+                if (!line.startsWith("resourcePacks:")) continue;
+                JsonArray packs = JsonParser.parseString(
+                        line.substring("resourcePacks:".length())).getAsJsonArray();
+                for (JsonElement element : packs) {
+                    if (wanted.equals(element.getAsString())) return true;
+                }
+            }
+        } catch (Exception ignored) {
+            // A malformed options file must not prevent pack generation.
+        }
+        return false;
     }
 
     private void writeTraditional(JsonObject source, Path target) throws IOException {
@@ -244,5 +298,6 @@ final class GeneratedPackGenerator {
                 """;
     }
 
-    record Result(int filesWritten, int sourcesRead, String packFile) { }
+    record Result(int filesWritten, int sourcesRead, String packFile,
+                  boolean initialSetupPerformed, boolean packEnabled) { }
 }
