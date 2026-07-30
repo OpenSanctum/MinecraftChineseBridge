@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * Reads language files directly from installed mod/resource-pack jars and folders.
@@ -31,6 +33,7 @@ import java.util.stream.Stream;
  */
 final class GeneratedPackGenerator {
     static final String PACK_DIRECTORY = "ZH-TW Auto Pack";
+    static final String PACK_FILE = "TChineseB-1.20.1.zip";
     private static final String CN_SUFFIX = "/lang/zh_cn.json";
     private static final String TW_SUFFIX = "/lang/zh_tw.json";
     private final Path gameDirectory;
@@ -63,7 +66,19 @@ final class GeneratedPackGenerator {
             writeTraditional(entry.getValue(), target);
             written++;
         }
+        zipPack(pack);
         return new Result(written, sources[0]);
+    }
+
+    private void zipPack(Path pack) throws IOException {
+        Path zip = pack.getParent().resolve(PACK_FILE);
+        try (ZipOutputStream output = new ZipOutputStream(Files.newOutputStream(zip)); Stream<Path> files = Files.walk(pack)) {
+            for (Path file : files.filter(Files::isRegularFile).toList()) {
+                output.putNextEntry(new ZipEntry(pack.relativize(file).toString().replace('\\', '/')));
+                Files.copy(file, output);
+                output.closeEntry();
+            }
+        }
     }
 
     private List<Path> discoverSources() throws IOException {
@@ -73,7 +88,7 @@ final class GeneratedPackGenerator {
             if (!Files.isDirectory(root)) continue;
             try (Stream<Path> paths = Files.walk(root, 3)) {
                 paths.filter(path -> Files.isDirectory(path) || path.toString().endsWith(".jar") || path.toString().endsWith(".zip"))
-                        .filter(path -> !path.getFileName().toString().equals(PACK_DIRECTORY))
+                        .filter(path -> !path.getFileName().toString().equals(PACK_DIRECTORY) && !path.getFileName().toString().equals(PACK_FILE))
                         .forEach(results::add);
             }
         }

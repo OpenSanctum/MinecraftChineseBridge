@@ -15,7 +15,7 @@ public final class ZhTwAutoPackClient implements ClientModInitializer {
         Minecraft client = Minecraft.getInstance();
         try {
             GeneratedPackGenerator.Result result = new GeneratedPackGenerator(client.gameDirectory.toPath()).generate();
-            String packId = "file/" + GeneratedPackGenerator.PACK_DIRECTORY;
+            String packId = "file/" + GeneratedPackGenerator.PACK_FILE;
             if (!client.options.resourcePacks.contains(packId)) {
                 client.options.resourcePacks.add(packId);
                 client.options.save();
