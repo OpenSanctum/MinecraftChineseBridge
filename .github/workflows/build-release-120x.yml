@@ -238,7 +238,7 @@ jobs:
           commit_full = os.environ.get('GITHUB_SHA', '').strip() or 'HEAD'
 
           for series in sorted(grouped.keys()):
-              release_tag = series
+              release_tag = f'{series}-Release'
               release_title = f'Minecraft {series}'
               programs = series_program.get(series, set())
               if len(programs) != 1:
