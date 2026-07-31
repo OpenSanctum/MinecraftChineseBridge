@@ -111,7 +111,7 @@ final class GenerationCoordinator {
             saveCache(snapshot);
             System.out.printf("[ChineseBridge] 已更新 %s，掃描 %d 個來源、產生 %d 個語系檔。%n",
                     result.packFile(), result.sourcesRead(), result.filesWritten());
-            if (result.packEnabled()) {
+            if (result.packEnabled() || result.initialSetupPerformed()) {
                 reloadResources.accept(new ReloadRequest(
                         "file/" + result.packFile(), result.initialSetupPerformed()));
             }

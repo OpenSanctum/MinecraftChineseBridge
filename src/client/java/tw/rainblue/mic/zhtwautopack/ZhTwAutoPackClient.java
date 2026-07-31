@@ -31,8 +31,8 @@ public final class ZhTwAutoPackClient implements ClientModInitializer {
 
     private void reload(Minecraft client, String packId) {
         PackRepository packs = client.getResourcePackRepository();
-        ArrayList<String> selected = new ArrayList<>(packs.getSelectedIds());
         packs.reload();
+        ArrayList<String> selected = new ArrayList<>(packs.getSelectedIds());
         selected.removeIf(id -> id.startsWith("file/ChineseBridge-"));
         selected.add(packId);
         packs.setSelected(selected);

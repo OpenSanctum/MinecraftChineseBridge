@@ -21,8 +21,8 @@ public final class ForgeEntrypoint {
 
     private void reload(Minecraft client, GenerationCoordinator.ReloadRequest request) {
         PackRepository packs = client.getResourcePackRepository();
-        ArrayList<String> selected = new ArrayList<>(packs.getSelectedIds());
         packs.reload();
+        ArrayList<String> selected = new ArrayList<>(packs.getSelectedIds());
         if (request.selectAtHighestPriority()) {
             selected.removeIf(id -> id.startsWith("file/ChineseBridge-"));
             selected.add(request.packId());

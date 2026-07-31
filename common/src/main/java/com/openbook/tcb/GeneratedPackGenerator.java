@@ -35,7 +35,8 @@ import java.util.zip.ZipOutputStream;
 
 final class GeneratedPackGenerator {
     private static final Pattern RELEASE_JAR =
-            Pattern.compile("^ChineseBridge-(?:fabric|forge|neoforge)-(.+)-(?:\\d{3})\\.jar$");
+            Pattern.compile("^ChineseBridge-(?:fabric|forge|neoforge)-(.+)-\\d+\\.jar$");
+    private static final Pattern PATCH_VERSION = Pattern.compile("^(\\d+\\.\\d+)\\.\\d+$");
     private static final String CN_SUFFIX = "/lang/zh_cn.json";
     private static final String TW_SUFFIX = "/lang/zh_tw.json";
     private static final String OLD_PACK_ID = "file/ZH-TW Auto Pack";
@@ -255,17 +256,31 @@ final class GeneratedPackGenerator {
 
     private String detectMinecraftVersion() {
         String override = System.getProperty("chinesebridge.minecraftVersion");
-        if (override != null && !override.isBlank()) return override;
+        if (override != null && !override.isBlank()) return normalizeMinecraftVersion(override);
         try {
             CodeSource source = GeneratedPackGenerator.class.getProtectionDomain().getCodeSource();
             if (source != null) {
                 String name = Path.of(source.getLocation().toURI()).getFileName().toString();
                 Matcher matcher = RELEASE_JAR.matcher(name);
-                if (matcher.matches()) return matcher.group(1);
+                if (matcher.matches()) return normalizeMinecraftVersion(matcher.group(1));
             }
         } catch (Exception ignored) {
         }
-        return "1.20.1";
+        try {
+            String runtime = net.minecraft.SharedConstants.getCurrentVersion().getName();
+            if (runtime != null && !runtime.isBlank()) {
+                return normalizeMinecraftVersion(runtime);
+            }
+        } catch (Throwable ignored) {
+        }
+        return "1.20.x";
+    }
+
+    private String normalizeMinecraftVersion(String version) {
+        String sanitized = version.replaceAll("[^0-9A-Za-z._-]", "_");
+        Matcher patchMatcher = PATCH_VERSION.matcher(sanitized);
+        if (patchMatcher.matches()) return patchMatcher.group(1) + ".x";
+        return sanitized;
     }
 
     private String packMetadata() {

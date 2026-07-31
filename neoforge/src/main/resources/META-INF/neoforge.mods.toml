@@ -4,7 +4,7 @@ license="MIT"
 
 [[mods]]
 modId="tchineseb"
-version="011"
+version="${mod_version}"
 displayName="ChineseBridge"
 authors="OpenSanctum"
 description='''自動補齊簡體中文、中文（台灣）與中文（香港）缺少的語系資源。'''
@@ -19,6 +19,6 @@ side="CLIENT"
 [[dependencies.tchineseb]]
 modId="minecraft"
 type="required"
-versionRange="[1.20.2,1.21)"
+versionRange="${minecraft_version_range}"
 ordering="NONE"
 side="CLIENT"
