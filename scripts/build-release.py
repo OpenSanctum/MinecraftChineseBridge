@@ -30,7 +30,7 @@ def read_current_version():
 
 
 def generate_date_version():
-    return datetime.datetime.utcnow().strftime('%y%m%d')
+    return datetime.datetime.now(datetime.UTC).strftime('%y%m%d')
 
 
 def write_version(version):
@@ -76,8 +76,43 @@ def run_command(cmd, cwd=None, env=None):
     subprocess.run(cmd, cwd=cwd, env=env, check=True)
 
 
+def stop_gradle_daemons(project_dir, env=None):
+    gradlew_name = 'gradlew.bat' if platform.system() == 'Windows' else 'gradlew'
+    gradlew = str(project_dir / gradlew_name)
+    try:
+        run_command([gradlew, '--stop'], cwd=project_dir, env=env)
+    except subprocess.CalledProcessError:
+        # Do not fail release builds just because no daemon was running.
+        pass
+
+
+def clean_lock_prone_outputs(project_dir):
+    if platform.system() == 'Windows':
+        command = (
+            "Remove-Item -Recurse -Force .\\build\\classes\\java\\main -ErrorAction SilentlyContinue; "
+            "Remove-Item -Recurse -Force .\\build\\resources\\client -ErrorAction SilentlyContinue; "
+            "Remove-Item -Recurse -Force .\\build\\resources\\main -ErrorAction SilentlyContinue"
+        )
+        subprocess.run(
+            ['powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', command],
+            cwd=project_dir,
+            check=False,
+        )
+        return
+
+    build_dir = project_dir / 'build'
+    candidates = [
+        build_dir / 'classes' / 'java' / 'main',
+        build_dir / 'resources' / 'client',
+        build_dir / 'resources' / 'main',
+    ]
+    for target in candidates:
+        shutil.rmtree(target, ignore_errors=True)
+
+
 def build_loader(loader, version, project_dir):
-    gradlew = 'gradlew.bat' if platform.system() == 'Windows' else './gradlew'
+    gradlew_name = 'gradlew.bat' if platform.system() == 'Windows' else 'gradlew'
+    gradlew = str(project_dir / gradlew_name)
     cmd = [gradlew, '--no-daemon', '--max-workers=1', '-Pmod_version=' + version, 'assemble']
     env = os.environ.copy()
     java_home = ensure_java()
@@ -86,13 +121,17 @@ def build_loader(loader, version, project_dir):
         env['Path'] = java_home + r'\bin;' + env.get('Path', '')
     else:
         env['PATH'] = str(Path(java_home) / 'bin') + os.pathsep + env.get('PATH', '')
+
+    if platform.system() == 'Windows':
+        stop_gradle_daemons(project_dir, env=env)
+        clean_lock_prone_outputs(project_dir)
+
     run_command(cmd, cwd=project_dir, env=env)
 
 
-def copy_output(project_dir, target_name, loader):
-    jar_candidates = []
-    for pattern in ['**/build/libs/*.jar', '**/build/libs/*/*.jar']:
-        jar_candidates.extend(project_dir.glob(pattern))
+def copy_output(project_dir, target_name, loader, version):
+    libs_dir = project_dir / 'build' / 'libs'
+    jar_candidates = list(libs_dir.rglob('*.jar')) if libs_dir.exists() else []
     jar_candidates = [
         p for p in jar_candidates
         if p.is_file()
@@ -105,13 +144,18 @@ def copy_output(project_dir, target_name, loader):
 
     # Forge/NeoForge require the fat jar containing bundled dependencies.
     if loader in {'forge', 'neoforge'}:
-        all_candidates = [p for p in jar_candidates if p.name.endswith('-all.jar')]
-        if not all_candidates:
+        pool = [p for p in jar_candidates if p.name.endswith('-all.jar')]
+        if not pool:
             raise RuntimeError(f'No *-all.jar found in {project_dir} for {loader}')
-        jar_path = sorted(all_candidates)[0]
     else:
-        regular_candidates = [p for p in jar_candidates if not p.name.endswith('-all.jar')]
-        jar_path = sorted(regular_candidates or jar_candidates)[0]
+        pool = [p for p in jar_candidates if not p.name.endswith('-all.jar')] or jar_candidates
+
+    versioned_pool = [p for p in pool if f'-{version}' in p.stem]
+    if versioned_pool:
+        jar_path = max(versioned_pool, key=lambda path: path.stat().st_mtime)
+    else:
+        jar_path = max(pool, key=lambda path: path.stat().st_mtime)
+        print(f'Warning: no artifact matched version {version}, fallback to latest {jar_path.name}')
 
     target_path = DIST_DIR / target_name
     shutil.copy2(jar_path, target_path)
@@ -164,13 +208,13 @@ def build_all(args):
             filename = data['filename'].format(loader=loader, series=series, program=version)
             if loader == 'fabric':
                 build_loader(loader, version, ROOT)
-                copy_output(ROOT, filename, loader)
+                copy_output(ROOT, filename, loader, version)
             elif loader == 'forge':
                 build_loader(loader, version, ROOT / 'forge')
-                copy_output(ROOT / 'forge', filename, loader)
+                copy_output(ROOT / 'forge', filename, loader, version)
             elif loader == 'neoforge':
                 build_loader(loader, version, ROOT / 'neoforge')
-                copy_output(ROOT / 'neoforge', filename, loader)
+                copy_output(ROOT / 'neoforge', filename, loader, version)
             else:
                 raise RuntimeError(f'Unsupported loader: {loader}')
 
