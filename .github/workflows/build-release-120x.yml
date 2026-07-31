@@ -3,7 +3,7 @@ name: Build release jars
 on:
   push:
     branches:
-      - main
+      - 1.20.x
   workflow_dispatch:
 
 permissions:
@@ -26,27 +26,22 @@ jobs:
           set -euo pipefail
 
           python3 <<'PY'
+          import datetime
           import json
           import os
           import pathlib
-          import re
 
           matrix_path = pathlib.Path('.github/release-matrix.json')
           data = json.loads(matrix_path.read_text(encoding='utf-8'))
 
-          gradle_props_path = pathlib.Path('gradle.properties')
-          props_text = gradle_props_path.read_text(encoding='utf-8')
-          match = re.search(r'^mod_version\s*=\s*(\d+)', props_text, re.M)
-          if not match:
-              raise SystemExit('mod_version not found in gradle.properties')
-
-          current_version = match.group(1)
-          next_version = str(int(current_version) + 1).zfill(len(current_version))
+          next_version = datetime.datetime.utcnow().strftime('%y%m%d')
 
           rows = []
           for release in data['releases']:
               series = release['series']
-              java_version = '17' if series.startswith('1.20') else '21'
+              if series != '1.20.x':
+                  continue
+              java_version = '17'
 
               for loader in release['loaders']:
                   filename = data['filename'].format(
@@ -58,21 +53,19 @@ jobs:
                       'series': series,
                       'program': next_version,
                       'loader': loader,
-                      'minecraft_range': release['minecraft_range'],
                       'java': java_version,
                       'filename': filename,
                   })
+
+          if not rows:
+              raise SystemExit('No 1.20.x releases configured in .github/release-matrix.json')
 
           with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as fh:
               fh.write(f"matrix={json.dumps(rows)}\n")
               fh.write(f"next_version={next_version}\n")
           PY
 
-          if [ -n "${next_version:-}" ]; then
-            echo "Using version ${next_version} for this build"
-          else
-            echo "Using version from gradle.properties"
-          fi
+          echo "Prepared 1.20.x release matrix"
 
   build:
     needs: prepare-matrix

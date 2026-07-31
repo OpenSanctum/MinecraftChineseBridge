@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import datetime
 import json
 import os
 import platform
@@ -28,14 +29,17 @@ def read_current_version():
     return match.group(1)
 
 
-def bump_version():
+def generate_date_version():
+    return datetime.datetime.utcnow().strftime('%y%m%d')
+
+
+def write_version(version):
     current = read_current_version()
-    next_version = str(int(current) + 1).zfill(len(current))
     text = GRADLE_PROPS_PATH.read_text(encoding='utf-8')
-    text = re.sub(r'(?m)^mod_version\s*=.*$', f'mod_version={next_version}', text, count=1)
+    text = re.sub(r'(?m)^mod_version\s*=.*$', f'mod_version={version}', text, count=1)
     GRADLE_PROPS_PATH.write_text(text, encoding='utf-8')
-    print(f'Bumped version from {current} to {next_version}')
-    return next_version
+    print(f'Updated version from {current} to {version}')
+    return version
 
 
 def ensure_java():
@@ -116,10 +120,10 @@ def copy_output(project_dir, target_name, loader):
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Build release jars locally and optionally upload them to GitHub Releases.')
-    parser.add_argument('--version', help='Override the release program/version number (e.g. 012)')
+    parser.add_argument('--version', help='Override the release program/version number (e.g. 260731)')
     parser.add_argument('--loader', choices=['fabric', 'forge', 'neoforge', 'all'], default='all')
-    parser.add_argument('--series', help='Only build a specific series like 1.20.x or 26.2.x')
-    parser.add_argument('--skip-bump', action='store_true', help='Do not increment the version in gradle.properties')
+    parser.add_argument('--series', help='Only build a specific series (this branch supports 1.20.x only)')
+    parser.add_argument('--skip-bump', action='store_true', help='Do not update mod_version in gradle.properties')
     parser.add_argument('--upload', action='store_true', help='Upload generated jars to a GitHub Release')
     parser.add_argument('--release-tag', default='main-builds', help='GitHub Release tag to upload to')
     return parser.parse_args()
@@ -137,11 +141,21 @@ def upload_to_github(release_tag, dist_dir):
 
 def build_all(args):
     data = read_release_matrix()
-    version = args.version or (read_current_version() if args.skip_bump else bump_version())
+    if args.series and args.series != '1.20.x':
+        raise RuntimeError('Only 1.20.x is supported on this branch')
+
+    version = args.version or generate_date_version()
+    if not args.skip_bump:
+        write_version(version)
+    else:
+        print(f'Using version {version} without updating gradle.properties')
+
     DIST_DIR.mkdir(exist_ok=True)
 
     for release in data['releases']:
         series = release['series']
+        if series != '1.20.x':
+            continue
         if args.series and series != args.series:
             continue
         for loader in release['loaders']:
