@@ -166,7 +166,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Build release jars locally and optionally upload them to GitHub Releases.')
     parser.add_argument('--version', help='Override the release program/version number (e.g. 260731)')
     parser.add_argument('--loader', choices=['fabric', 'forge', 'neoforge', 'all'], default='all')
-    parser.add_argument('--series', help='Only build a specific series (this branch supports 26.1.x only)')
+    parser.add_argument('--series', help='Only build a specific series (this branch supports 26.2.x only)')
     parser.add_argument('--skip-bump', action='store_true', help='Do not update mod_version in gradle.properties')
     parser.add_argument('--upload', action='store_true', help='Upload generated jars to a GitHub Release')
     parser.add_argument('--release-tag', default='main-builds', help='GitHub Release tag to upload to')
@@ -185,8 +185,8 @@ def upload_to_github(release_tag, dist_dir):
 
 def build_all(args):
     data = read_release_matrix()
-    if args.series and args.series != '26.1.x':
-        raise RuntimeError('Only 26.1.x is supported on this branch')
+    if args.series and args.series != '26.2.x':
+        raise RuntimeError('Only 26.2.x is supported on this branch')
 
     version = args.version or generate_date_version()
     if not args.skip_bump:
@@ -198,7 +198,7 @@ def build_all(args):
 
     for release in data['releases']:
         series = release['series']
-        if series != '26.1.x':
+        if series != '26.2.x':
             continue
         if args.series and series != args.series:
             continue
