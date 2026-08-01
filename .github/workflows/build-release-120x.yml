@@ -1,4 +1,4 @@
-name: Build release jars
+name: Build release for 1.20.x
 
 on:
   push:
