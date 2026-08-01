@@ -335,12 +335,11 @@ final class GeneratedPackGenerator {
         return """
                 {
                   "pack": {
-                    "pack_format": 15,
-                    "supported_formats": {
-                      "min_inclusive": 15,
-                      "max_inclusive": 999
-                    },
-                                                                                "description": "中文橋接模組資源包"
+                                        "description": "中文橋接模組資源包",
+                                        "pack_format": 34,
+                                        "min_format": 34,
+                                        "max_format": 88,
+                                        "supported_formats": [34, 64]
                   }
                 }
                 """;

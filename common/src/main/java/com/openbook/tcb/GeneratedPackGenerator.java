@@ -58,7 +58,9 @@ final class GeneratedPackGenerator {
         SourceHashCache.Snapshot snapshot = null;
         try {
             snapshot = sourceHashCache.capture();
-            if (!sourceHashCache.contentChanged(snapshot) && Files.exists(generatedPackPath())) {
+            if (!sourceHashCache.contentChanged(snapshot)
+                    && Files.exists(generatedPackPath())
+                    && generatedPackHasCurrentMetadata()) {
                 return new Result(0, 0, packFile);
             }
         } catch (Exception ignored) {
@@ -119,6 +121,22 @@ final class GeneratedPackGenerator {
 
     private Path generatedPackPath() {
         return gameDirectory.resolve("resourcepacks").resolve(packFile);
+    }
+
+    private boolean generatedPackHasCurrentMetadata() {
+        Path generated = generatedPackPath();
+        if (!Files.exists(generated)) return false;
+        try (FileSystem zip = FileSystems.newFileSystem(generated, (ClassLoader) null)) {
+            Path metadata = zip.getPath("/pack.mcmeta");
+            if (!Files.isRegularFile(metadata)) return false;
+            String content = Files.readString(metadata, StandardCharsets.UTF_8);
+            return content.contains("\"pack_format\": 34")
+                    && content.contains("\"min_format\": 34")
+                    && content.contains("\"max_format\": 88")
+                    && content.contains("\"supported_formats\": [34, 64]");
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 
     private List<Path> discoverSources() throws IOException {
@@ -287,12 +305,11 @@ final class GeneratedPackGenerator {
         return """
                 {
                   "pack": {
-                    "pack_format": 15,
-                    "supported_formats": {
-                      "min_inclusive": 15,
-                      "max_inclusive": 999
-                    },
-                                                                                "description": "中文橋接模組資源包"
+                                        "description": "中文橋接模組資源包",
+                                        "pack_format": 34,
+                                        "min_format": 34,
+                                        "max_format": 88,
+                                        "supported_formats": [34, 64]
                   }
                 }
                 """;

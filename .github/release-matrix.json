@@ -2,14 +2,14 @@
   "filename": "ChineseBridge-{loader}-{series}-{program}.jar",
   "releases": [
     {
-      "series": "1.20.x",
+      "series": "1.21.x",
       "program": "YYMMDD",
       "loaders": [
         "fabric",
         "forge",
         "neoforge"
       ],
-      "minecraft_range": "1.20.1-1.20.6"
+      "minecraft_range": "1.21.x"
     }
   ]
 }
