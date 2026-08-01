@@ -1,11 +1,11 @@
 {
   "pack": { 
     "description": {
-      "text": "ChineseBridge resources (1.21.x)"
+      "text": "ChineseBridge resources (26.1.x)"
     },
-    "pack_format": 34,
-    "min_format": 34,
-    "max_format": 88,
-    "supported_formats": [34, 64]
+    "pack_format": 84,
+    "min_format": 84,
+    "max_format": 84,
+    "supported_formats": [84, 84]
   }
 }
