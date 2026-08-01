@@ -39,7 +39,7 @@ jobs:
           rows = []
           for release in data['releases']:
               series = release['series']
-              if series != '1.21.x':
+              if series != '26.2.x':
                   continue
               java_version = '17'
 
@@ -58,14 +58,14 @@ jobs:
                   })
 
           if not rows:
-              raise SystemExit('No 1.21.x releases configured in .github/release-matrix.json')
+              raise SystemExit('No 26.2.x releases configured in .github/release-matrix.json')
 
           with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as fh:
               fh.write(f"matrix={json.dumps(rows)}\n")
               fh.write(f"next_version={next_version}\n")
           PY
 
-          echo "Prepared 1.21.x release matrix"
+          echo "Prepared 26.2.x release matrix"
 
   build:
     needs: prepare-matrix
